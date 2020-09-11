@@ -1,0 +1,8 @@
+<Project>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(SolutionDir).Build\CustomCode.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+</Project>

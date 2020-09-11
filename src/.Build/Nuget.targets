@@ -1,0 +1,13 @@
+<Project>
+
+  <PropertyGroup>
+    <PackageId>$(RootNamespace)</PackageId>
+    <Title>$(AssemblyTitle)</Title>
+  </PropertyGroup>
+
+  <Target Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" Name="PostBuild" AfterTargets="Pack">
+    <Exec Command="xcopy &quot;$(ProjectDir)bin\Release\*.nupkg&quot; &quot;$(SolutionDir)..\..\.nuget\packages\&quot; /Y /I" />
+    <Exec Command="xcopy &quot;$(ProjectDir)bin\Release\*.snupkg&quot; &quot;$(SolutionDir)..\..\.nuget\packages\&quot; /Y /I" />
+  </Target>
+  
+</Project>

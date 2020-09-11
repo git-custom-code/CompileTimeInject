@@ -1,0 +1,25 @@
+<Project>
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageVersion>$(SemVer)</PackageVersion>
+    <PackageProjectUrl>https://github.com/git-custom-code/CompileTimeInject</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/git-custom-code/CompileTimeInject</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>C#, Dependency Injection, SourceGenerators</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageIcon>CustomCode.png</PackageIcon>
+    <PackageIconPath>$(SolutionDir).Build\$(PackageIcon)</PackageIconPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(IsPackable)' == 'true' ">
+    <None Include="$(PackageIconPath)">
+      <Pack>true</Pack>
+      <PackagePath>/$(PackageIcon)</PackagePath>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+
+</Project>

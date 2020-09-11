@@ -1,0 +1,11 @@
+<Project>
+
+  <PropertyGroup>
+    <Authors>CustomCode</Authors>
+    <Company>CustomCode</Company>
+    <Copyright>Copyright © 2020</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Product>Compile time generated inversion of control container for Dependency Injection in C#.</Product>
+  </PropertyGroup>
+
+</Project>

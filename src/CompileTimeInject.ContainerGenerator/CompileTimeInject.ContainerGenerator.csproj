@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Title>CompileTimeInject source generator.</Title>
+    <Description>C# source generator for creating an inversion of control container at compile time.</Description>
+    <RootNamespace>CustomCode.CompileTimeInject.ContainerGenerator</RootNamespace>
+  </PropertyGroup>
+
+</Project>

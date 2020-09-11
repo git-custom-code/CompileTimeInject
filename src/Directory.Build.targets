@@ -1,0 +1,6 @@
+<Project>
+
+  <Import Project="$(SolutionDir).Build/Nuget.targets"
+          Condition="!$(MSBuildProjectName.StartsWith('Test.')) And !$(MSBuildProjectName.StartsWith('Benchmark.'))"/>
+
+</Project>

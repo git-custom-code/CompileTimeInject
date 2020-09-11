@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTimeInject", "CompileTimeInject\CompileTimeInject.csproj", "{819066CF-1938-46E5-AD2A-B7A5E8F02F57}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5EE40D1B-1892-4CAC-A978-A030F68FF0B0}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Style Guides", "Style Guides", "{D80C32FD-0567-452B-A203-218608206D0F}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{E171F81E-EB2E-41D6-95AB-0D8E48D164AC}"
+	ProjectSection(SolutionItems) = preProject
+		.Build\Copyright.props = .Build\Copyright.props
+		.Build\CustomCode.snk = .Build\CustomCode.snk
+		.Build\Documentation.props = .Build\Documentation.props
+		.Build\NonNullableReferenceTypes.props = .Build\NonNullableReferenceTypes.props
+		.Build\Nuget.props = .Build\Nuget.props
+		.Build\Nuget.targets = .Build\Nuget.targets
+		.Build\Signing.props = .Build\Signing.props
+		.Build\Versioning.props = .Build\Versioning.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{733A6CDE-C05E-4C49-BD21-6D9643037946}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.config = .nuget\NuGet.config
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompileTimeInject.ContainerGenerator", "CompileTimeInject.ContainerGenerator\CompileTimeInject.ContainerGenerator.csproj", "{193A19DF-1EAF-4DB1-82BF-617C0E116E48}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D80C32FD-0567-452B-A203-218608206D0F} = {5EE40D1B-1892-4CAC-A978-A030F68FF0B0}
+		{E171F81E-EB2E-41D6-95AB-0D8E48D164AC} = {5EE40D1B-1892-4CAC-A978-A030F68FF0B0}
+		{733A6CDE-C05E-4C49-BD21-6D9643037946} = {5EE40D1B-1892-4CAC-A978-A030F68FF0B0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C01A883A-5D89-4E77-83E9-9BDA60D433C3}
+	EndGlobalSection
+EndGlobal
