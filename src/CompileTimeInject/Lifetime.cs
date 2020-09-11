@@ -1,0 +1,11 @@
+namespace CustomCode.CompileTimeInject
+{
+    /// <summary>
+    /// Used in combination with an <see cref="ExportAttribute"/> to define the lifetime policy of a service.
+    /// </summary>
+    public enum Lifetime : byte
+    {
+        /// <summary> A new service instance is created per request. </summary>
+        Transient = 0
+    }
+}
