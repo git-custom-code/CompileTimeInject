@@ -65,7 +65,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             const string t = "    ";
 
             var code = new StringBuilder();
-            code.AppendLine("namespace CustomCode.ComileTimeInject.GeneratedCode");
+            code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
             code.AppendLine("{");
 
             code.AppendLine($"{t}/// <summary>");
