@@ -123,9 +123,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             }
             code.AppendLine($"{t}{{");
 
+            code.AppendLine($"{t}{t}#region Logic");
+            code.AppendLine();
+
             foreach (var service in services)
             {
-                code.AppendLine($"{t}/// <inheritdoc />");
+                code.AppendLine($"{t}{t}/// <inheritdoc />");
                 code.AppendLine($"{t}{t}{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()");
                 code.AppendLine($"{t}{t}{{");
 
@@ -133,6 +136,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 code.AppendLine($"{t}{t}{t}return service;");
                 code.AppendLine($"{t}{t}}}");
             }
+
+            code.AppendLine();
+            code.AppendLine($"{t}{t}#endregion");
 
             code.AppendLine($"{t}}}");
 
