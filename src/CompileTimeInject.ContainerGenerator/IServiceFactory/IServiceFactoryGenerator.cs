@@ -49,7 +49,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         category: "CompileTimeInject.ContainerGenerator",
                         defaultSeverity: DiagnosticSeverity.Error,
                         isEnabledByDefault: true,
-                        description: "There was an unexpected exception creating the IServiceFactory<T> interface"),
+                        description: "There was an unexpected exception generating the IServiceFactory<T> interface"),
                     Location.None,
                     e);
                 context.ReportDiagnostic(diagnostic);
