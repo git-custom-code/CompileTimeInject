@@ -61,5 +61,54 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         }
 
         #endregion
+
+        #region Logic
+
+        /// <summary>
+        /// Compares two <see cref="TypeDescriptor"/> instances for equality.
+        /// </summary>
+        /// <param name="left"> The operator's left hand side argument. </param>
+        /// <param name="right"> The operator's right hand side argument. </param>
+        /// <returns> True if both <see cref="TypeDescriptor"/> instances are equal, false otherwise. </returns>
+        public static bool operator == (TypeDescriptor left, TypeDescriptor right)
+        {
+            return string.Equals(left.FullName, right.FullName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Compares two <see cref="TypeDescriptor"/> instances for inequality.
+        /// </summary>
+        /// <param name="left"> The operator's left hand side argument. </param>
+        /// <param name="right"> The operator's right hand side argument. </param>
+        /// <returns> False if both <see cref="TypeDescriptor"/> instances are equal, true otherwise. </returns>
+        public static bool operator !=(TypeDescriptor left, TypeDescriptor right)
+        {
+            return !string.Equals(left.FullName, right.FullName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (obj is TypeDescriptor type)
+            {
+                return string.Equals(FullName, type.FullName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return FullName.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return FullName;
+        }
+
+        #endregion
     }
 }

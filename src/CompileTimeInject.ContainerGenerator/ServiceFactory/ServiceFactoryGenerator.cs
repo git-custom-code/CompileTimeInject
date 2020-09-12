@@ -121,18 +121,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             var code = new StringBuilder();
             code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
             code.AppendLine("{");
+            code.AppendLine($"{t}using System.Collections.Generic;");
+            code.AppendLine();
 
             code.AppendLine($"{t}/// <summary>");
             code.AppendLine($"{t}/// Default implementation for each <see cref=\"IServiceFactory{{T}}\"/> interface.");
             code.AppendLine($"{t}/// </summary>");
             code.AppendLine($"{t}public sealed partial class ServiceFactory");
-            if (services.Any())
+
+            var serviceGroups = services.GroupBy(service => service.Contract).ToList();
+            if (serviceGroups.Any())
             {
-                var firstService = services.First();
-                code.AppendLine($"{t}{t}: IServiceFactory<{firstService.Contract.FullName}>");
-                foreach (var service in services.Skip(1))
+                var separator = ":";
+                foreach (var serviceGroup in serviceGroups)
                 {
-                    code.AppendLine($"{t}{t}, IServiceFactory<{service.Contract.FullName}>");
+                    if (serviceGroup.Count() > 1)
+                    {
+                        code.AppendLine($"{t}{t}{separator} IServiceFactory<IEnumerable<{serviceGroup.Key.FullName}>>");
+                    }
+                    else
+                    {
+                        code.AppendLine($"{t}{t}{separator} IServiceFactory<{serviceGroup.Key.FullName}>");
+                    }
+                    separator = ",";
                 }
             }
             code.AppendLine($"{t}{{");
@@ -140,15 +151,40 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             code.AppendLine($"{t}{t}#region Logic");
             code.AppendLine();
 
-            foreach (var service in services)
+            foreach (var serviceGroup in serviceGroups)
             {
-                code.AppendLine($"{t}{t}/// <inheritdoc />");
-                code.AppendLine($"{t}{t}{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()");
-                code.AppendLine($"{t}{t}{{");
+                if (serviceGroup.Count() > 1)
+                {
+                    code.AppendLine($"{t}{t}/// <inheritdoc />");
+                    code.AppendLine($"{t}{t}IEnumerable<{serviceGroup.Key.FullName}> IServiceFactory<IEnumerable<{serviceGroup.Key.FullName}>>.CreateOrGetService()");
+                    code.AppendLine($"{t}{t}{{");
+                    code.AppendLine($"{t}{t}{t}var services = new List<{serviceGroup.Key.FullName}>();");
+                    code.AppendLine();
 
-                code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
-                code.AppendLine($"{t}{t}{t}return service;");
-                code.AppendLine($"{t}{t}}}");
+                    var implementationCount = 0;
+                    foreach (var service in serviceGroup)
+                    {
+                        code.AppendLine($"{t}{t}{t}var service{implementationCount} = new {service.Implementation.FullName}();");
+                        code.AppendLine($"{t}{t}{t}services.Add(service{implementationCount});");
+                        code.AppendLine();
+                        ++implementationCount;
+                    }
+
+                    code.AppendLine($"{t}{t}{t}return services;");
+                    code.AppendLine($"{t}{t}}}");
+                }
+                else
+                {
+
+                    var service = serviceGroup.First();
+                    code.AppendLine($"{t}{t}/// <inheritdoc />");
+                    code.AppendLine($"{t}{t}{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()");
+                    code.AppendLine($"{t}{t}{{");
+
+                    code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
+                    code.AppendLine($"{t}{t}{t}return service;");
+                    code.AppendLine($"{t}{t}}}");
+                }
                 code.AppendLine();
             }
 
