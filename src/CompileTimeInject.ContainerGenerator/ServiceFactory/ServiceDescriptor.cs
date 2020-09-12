@@ -12,8 +12,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// Creates a new instance of the <see cref="ServiceDescriptor"/> type.
         /// </summary>
         /// <param name="implementation"> The described service's implementation type. </param>
-        public ServiceDescriptor(TypeDescriptor implementation)
-            : this(implementation, implementation)
+        /// <param name="lifetime"> The service's lifetime policy. </param>
+        public ServiceDescriptor(TypeDescriptor implementation, Lifetime lifetime)
+            : this(implementation, implementation, lifetime)
         { }
 
         /// <summary>
@@ -21,10 +22,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// </summary>
         /// <param name="contract"> The described service's implemented contract type. </param>
         /// <param name="implementation"> The described service's implementation type. </param>
-        public ServiceDescriptor(TypeDescriptor contract, TypeDescriptor implementation)
+        /// <param name="lifetime"> The service's lifetime policy. </param>
+        public ServiceDescriptor(TypeDescriptor contract, TypeDescriptor implementation, Lifetime lifetime)
         {
             Contract = contract;
             Implementation = implementation;
+            Lifetime = lifetime;
         }
 
         #endregion
@@ -40,6 +43,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// Gets the described service's implementation type.
         /// </summary>
         public TypeDescriptor Implementation { get; }
+
+        /// <summary>
+        /// Gets the service's lifetime policy.
+        /// </summary>
+        public Lifetime Lifetime { get; }
 
         #endregion
     }

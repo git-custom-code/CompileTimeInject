@@ -6,6 +6,8 @@ namespace CustomCode.CompileTimeInject
     public enum Lifetime : byte
     {
         /// <summary> A new service instance is created per request. </summary>
-        Transient = 0
+        Transient = 0,
+        /// <summary> A new service instance is created once per container. </summary>
+        Singleton = 1
     }
 }

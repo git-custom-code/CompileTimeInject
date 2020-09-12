@@ -4,6 +4,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection.Metadata;
@@ -17,12 +18,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// <![CDATA[
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
+    ///     using System;
+    ///     using System.Collections.Concurrent;
+    ///     using System.Collections.Generic;
+    ///
     ///     public sealed partial class ServiceFactory
     ///         : IServiceFactory<IFoo1>
     ///         , IServiceFactory<IFoo2>
     ///         ...
     ///         , IServiceFactory<IFooN>
     ///     {
+    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; } = new ConcurrentDictionary<Type, object>();
+    /// 
     ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
     ///         {
     ///             return new Foo1();
@@ -68,13 +75,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         continue;
                     }
 
-                    foreach (var typeDefinition in reader.GetExportedTypeDefinitions())
+                    foreach (var service in reader.GetExportedServices())
                     {
-                        var implementation = reader.ToTypeDescriptor(typeDefinition);
-                        var interfaceImplementations = typeDefinition.GetInterfaceImplementations();
+                        var lifetime = Lifetime.Transient;
+                        foreach(var value in service.ExportAttribute.FixedArguments)
+                        {
+                            if (value.Type.FullName == typeof(Lifetime).FullName)
+                            {
+                                lifetime = (Lifetime)value.Value;
+                            }
+                        }
+
+                        var implementation = reader.ToTypeDescriptor(service.TypeDefinition);
+                        var interfaceImplementations = service.TypeDefinition.GetInterfaceImplementations();
                         if (interfaceImplementations.Count == 0)
                         {
-                            detectedServices.Add(new ServiceDescriptor(implementation));
+                            detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
                         }
                         else
                         {
@@ -83,7 +99,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                                 var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
                                 var contractType = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
                                 var contract = reader.ToTypeDescriptor(contractType);
-                                detectedServices.Add(new ServiceDescriptor(contract, implementation));
+                                detectedServices.Add(new ServiceDescriptor(contract, implementation, lifetime));
                             }
                         }
                     }
@@ -121,6 +137,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             var code = new StringBuilder();
             code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
             code.AppendLine("{");
+            code.AppendLine($"{t}using System;");
+            code.AppendLine($"{t}using System.Collections.Concurrent;");
             code.AppendLine($"{t}using System.Collections.Generic;");
             code.AppendLine();
 
@@ -148,6 +166,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             }
             code.AppendLine($"{t}{{");
 
+            // Data
+            code.AppendLine($"{t}{t}#region Data");
+            code.AppendLine();
+            code.AppendLine($"{t}{t}/// <summary>");
+            code.AppendLine($"{t}{t}/// Gets a cache for created singleton service instances.");
+            code.AppendLine($"{t}{t}/// </summary>");
+            code.AppendLine($"{t}{t}private ConcurrentDictionary<Type, object> SingletonInstances {{ get; }} = new ConcurrentDictionary<Type, object>();");
+            code.AppendLine();
+            code.AppendLine($"{t}{t}#endregion");
+            code.AppendLine();
+
+            // Logic
             code.AppendLine($"{t}{t}#region Logic");
             code.AppendLine();
 
@@ -164,7 +194,15 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     var implementationCount = 0;
                     foreach (var service in serviceGroup)
                     {
-                        code.AppendLine($"{t}{t}{t}var service{implementationCount} = new {service.Implementation.FullName}();");
+                        if (service.Lifetime == Lifetime.Singleton)
+                        {
+                            code.AppendLine($"{t}{t}{t}var service{implementationCount} = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ => new {service.Implementation.FullName}());");
+                        }
+                        else
+                        {
+                            code.AppendLine($"{t}{t}{t}var service{implementationCount} = new {service.Implementation.FullName}();");
+                        }
+
                         code.AppendLine($"{t}{t}{t}services.Add(service{implementationCount});");
                         code.AppendLine();
                         ++implementationCount;
@@ -181,7 +219,15 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     code.AppendLine($"{t}{t}{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()");
                     code.AppendLine($"{t}{t}{{");
 
-                    code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
+                    if (service.Lifetime == Lifetime.Singleton)
+                    {
+                        code.AppendLine($"{t}{t}{t}var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ => new {service.Implementation.FullName}());");
+                    }
+                    else
+                    {
+                        code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
+                    }
+
                     code.AppendLine($"{t}{t}{t}return service;");
                     code.AppendLine($"{t}{t}}}");
                 }

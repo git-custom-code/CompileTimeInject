@@ -12,19 +12,19 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         #region Logic
 
         /// <summary>
-        /// Get a collection of <see cref="TypeDefinition"/>s for all types that are annotated
+        /// Get a collection of <see cref="ServiceMetadata"/>s for all types that are annotated
         /// with an <see cref="ExportAttribute"/>.
         /// </summary>
         /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
-        /// <returns> A collection of <see cref="TypeDefinition"/>s for all annotated types. </returns>
-        public static IEnumerable<TypeDefinition> GetExportedTypeDefinitions(this MetadataReader reader)
+        /// <returns> A collection of <see cref="ServiceMetadata"/>s for all annotated types. </returns>
+        public static IEnumerable<ServiceMetadata> GetExportedServices(this MetadataReader reader)
         {
             var targetAttributeType = typeof(ExportAttribute);
             var targetName = targetAttributeType.Name;
             var targetNamespace = targetAttributeType.Namespace;
             var targetAssemblyName = targetAttributeType.Assembly.GetName().Name;
 
-            var exportedTypes = new List<TypeDefinition>();
+            var exportedTypes = new List<ServiceMetadata>();
             foreach (var attributeHandle in reader.CustomAttributes)
             {
                 var attribute = reader.GetCustomAttribute(attributeHandle);
@@ -46,8 +46,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                         string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
                     {
-                        var typeDef = reader.GetTypeDefinition((TypeDefinitionHandle)attribute.Parent);
-                        exportedTypes.Add(typeDef);
+                        var exportAttribute = attribute.DecodeValue(new ExportAttributeProvider());
+                        var serviceDefinition = reader.GetTypeDefinition((TypeDefinitionHandle)attribute.Parent);
+                        exportedTypes.Add(new ServiceMetadata(exportAttribute, serviceDefinition));
                     }
                 }
             }
@@ -59,7 +60,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// Convert the given <paramref name="typeDefinition"/> to a <see cref="TypeDescriptor"/>.
         /// </summary>
         /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
-        /// <param name="typeDefinition"> The <see cref="TypeDefinition"/> that be converted. </param>
+        /// <param name="typeDefinition"> The <see cref="TypeDefinition"/> to be converted. </param>
         /// <returns> The converted <see cref="TypeDescriptor"/>. </returns>
         public static TypeDescriptor ToTypeDescriptor(this MetadataReader reader, TypeDefinition typeDefinition)
         {
@@ -70,6 +71,24 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             }
 
             var @namespace = reader.GetString(typeDefinition.Namespace);
+            return new TypeDescriptor(@namespace, name);
+        }
+
+        /// <summary>
+        /// Convert the given <paramref name="typeReferefrence"/> to a <see cref="TypeDescriptor"/>.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <param name="typeReferefrence"> The <see cref="TypeReference"/> to be converted. </param>
+        /// <returns> The converted <see cref="TypeDescriptor"/>. </returns>
+        public static TypeDescriptor ToTypeDescriptor(this MetadataReader reader, TypeReference typeReferefrence)
+        {
+            var name = reader.GetString(typeReferefrence.Name);
+            if (typeReferefrence.Namespace.IsNil)
+            {
+                return new TypeDescriptor(name);
+            }
+
+            var @namespace = reader.GetString(typeReferefrence.Namespace);
             return new TypeDescriptor(@namespace, name);
         }
 
