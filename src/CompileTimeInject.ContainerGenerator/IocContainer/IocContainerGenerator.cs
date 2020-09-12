@@ -132,10 +132,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             code.AppendLine();
 
             code.AppendLine($"{t}{t}/// <summary>");
-            code.AppendLine($"{t}{t}/// Gets a collection of service implementations with the same contract.");
+            code.AppendLine($"{t}{t}/// Gets a collection of service implementations of the same contract.");
             code.AppendLine($"{t}{t}/// </summary>");
             code.AppendLine($"{t}{t}/// <typeparam name=\"T\"> The service contract whose implementations should be retrieved. </typeparam>");
-            code.AppendLine($"{t}{t}/// <returns> The contract's service implementations or <see cref=\"Enumerable.Empty{{T}}\"/> if no such implementation exists. </returns>");
+            code.AppendLine($"{t}{t}/// <returns> The service contract's implementations or <see cref=\"Enumerable.Empty{{T}}\"/> if no such implementations exists. </returns>");
             code.AppendLine($"{t}{t}public IEnumerable<T> GetServices<T>() where T : class");
             code.AppendLine($"{t}{t}{{");
             code.AppendLine($"{t}{t}{t}var collectionFactory = Factory as IServiceFactory<IEnumerable<T>>;");
