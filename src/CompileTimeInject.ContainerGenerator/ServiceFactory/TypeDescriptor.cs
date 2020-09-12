@@ -51,6 +51,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             get
             {
                 var namespaceLength = FullName.LastIndexOf('.');
+                if (namespaceLength == -1)
+                {
+                    return FullName.AsSpan();
+                }
+
                 return FullName.AsSpan().Slice(namespaceLength);
             }
         }
@@ -63,6 +68,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             get
             {
                 var namespaceLength = FullName.LastIndexOf('.');
+                if (namespaceLength == -1)
+                {
+                    return new ReadOnlySpan<char>();
+                }
+
                 return FullName.AsSpan().Slice(0, namespaceLength - 1);
             }
         }
