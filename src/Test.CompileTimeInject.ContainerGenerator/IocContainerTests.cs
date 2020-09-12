@@ -67,5 +67,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.NotNull(fooCollection);
             Assert.Equal(2, fooCollection.Count());
         }
+
+        [Fact]
+        public void GetServicesAsSingleton()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo1 = container.GetService<directRef.AsSingleton.IFoo>();
+            var foo2 = container.GetService<directRef.AsSingleton.IFoo>();
+
+            // Then
+            Assert.NotNull(foo1);
+            Assert.NotNull(foo2);
+            Assert.Equal(foo1, foo2);
+            Assert.Equal(foo1.Id, foo2.Id);
+        }
     }
 }
