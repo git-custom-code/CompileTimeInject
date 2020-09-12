@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTimeInject.Container
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.CompileTimeInject.ContainerGenerator", "Test.CompileTimeInject.ContainerGenerator\Test.CompileTimeInject.ContainerGenerator.csproj", "{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.CompileTimeInject.DirectReference", "Test.CompileTimeInject.DirectReference\Test.CompileTimeInject.DirectReference.csproj", "{4A24AAE8-5FED-430C-B8BA-0ED873DFADC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.DirectReference", "Test.DirectRefence\Test.DirectReference.csproj", "{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,10 +57,10 @@ Global
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A24AAE8-5FED-430C-B8BA-0ED873DFADC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A24AAE8-5FED-430C-B8BA-0ED873DFADC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A24AAE8-5FED-430C-B8BA-0ED873DFADC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A24AAE8-5FED-430C-B8BA-0ED873DFADC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
