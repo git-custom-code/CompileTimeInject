@@ -1,6 +1,7 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
 {
     using GeneratedCode;
+    using System.Linq;
     using Xunit;
     using directRef = Test.DirectReference;
 
@@ -49,6 +50,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.NotNull(fooByContract);
             Assert.NotNull(barByContract);
             Assert.Null(fooByImplementation);
+        }
+
+        [Fact]
+        public void GetServicesByMultipleImplementations()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var singleFoo = container.GetService<directRef.ByMultipleImplementations.IFoo>();
+            var fooCollection = container.GetServices<directRef.ByMultipleImplementations.IFoo>();
+
+            // Then
+            Assert.Null(singleFoo);
+            Assert.NotNull(fooCollection);
+            Assert.Equal(2, fooCollection.Count());
         }
     }
 }
