@@ -71,7 +71,21 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     foreach (var typeDefinition in reader.GetExportedTypeDefinitions())
                     {
                         var implementation = reader.ToTypeDescriptor(typeDefinition);
-                        detectedServices.Add(new ServiceDescriptor(implementation));
+                        var interfaceImplementations = typeDefinition.GetInterfaceImplementations();
+                        if (interfaceImplementations.Count == 0)
+                        {
+                            detectedServices.Add(new ServiceDescriptor(implementation));
+                        }
+                        else
+                        {
+                            foreach (var implementationHandle in interfaceImplementations)
+                            {
+                                var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
+                                var contractType = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
+                                var contract = reader.ToTypeDescriptor(contractType);
+                                detectedServices.Add(new ServiceDescriptor(contract, implementation));
+                            }
+                        }
                     }
                 }
 
@@ -135,9 +149,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
                 code.AppendLine($"{t}{t}{t}return service;");
                 code.AppendLine($"{t}{t}}}");
+                code.AppendLine();
             }
 
-            code.AppendLine();
             code.AppendLine($"{t}{t}#endregion");
 
             code.AppendLine($"{t}}}");
