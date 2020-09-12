@@ -82,7 +82,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.NotNull(foo1);
             Assert.NotNull(foo2);
             Assert.Equal(foo1, foo2);
-            Assert.Equal(foo1.Id, foo2.Id);
+            Assert.Equal(foo1?.Id, foo2?.Id);
+        }
+
+        [Fact]
+        public void GetServicesByFilteredContract()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.ByFilteredContract.IFoo>();
+            var bar = container.GetService<directRef.ByFilteredContract.IBar>();
+
+            // Then
+            Assert.Null(foo);
+            Assert.NotNull(bar);
         }
     }
 }
