@@ -4,7 +4,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection.Metadata;
@@ -78,28 +77,40 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     foreach (var service in reader.GetExportedServices())
                     {
                         var lifetime = Lifetime.Transient;
+                        TypeDescriptor? contractFilter = null; 
                         foreach(var value in service.ExportAttribute.FixedArguments)
                         {
                             if (value.Type.FullName == typeof(Lifetime).FullName)
                             {
                                 lifetime = (Lifetime)value.Value;
                             }
+                            else if (value.Type.FullName == typeof(Type).FullName)
+                            {
+                                contractFilter = (TypeDescriptor)value.Value;
+                            }
                         }
 
                         var implementation = reader.ToTypeDescriptor(service.TypeDefinition);
-                        var interfaceImplementations = service.TypeDefinition.GetInterfaceImplementations();
-                        if (interfaceImplementations.Count == 0)
+                        if (contractFilter.HasValue)
                         {
-                            detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
+                            detectedServices.Add(new ServiceDescriptor(contractFilter.Value, implementation, lifetime));
                         }
                         else
                         {
-                            foreach (var implementationHandle in interfaceImplementations)
+                            var interfaceImplementations = service.TypeDefinition.GetInterfaceImplementations();
+                            if (interfaceImplementations.Count == 0)
                             {
-                                var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
-                                var contractType = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
-                                var contract = reader.ToTypeDescriptor(contractType);
-                                detectedServices.Add(new ServiceDescriptor(contract, implementation, lifetime));
+                                detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
+                            }
+                            else
+                            {
+                                foreach (var implementationHandle in interfaceImplementations)
+                                {
+                                    var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
+                                    var contractType = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
+                                    var contract = reader.ToTypeDescriptor(contractType);
+                                    detectedServices.Add(new ServiceDescriptor(contract, implementation, lifetime));
+                                }
                             }
                         }
                     }

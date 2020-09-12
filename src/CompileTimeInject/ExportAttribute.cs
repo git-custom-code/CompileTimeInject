@@ -14,21 +14,41 @@ namespace CustomCode.CompileTimeInject
     /// public sealed class Foo
     /// { }
     /// ]]>
-    /// - If the type implements a single interface it is registered by the interface:
+    /// - If the type implements a single interface it is registered by the interface (and not by the type):
     /// <![CDATA[
     /// [Export]
     /// public sealed class Foo : IFoo
     /// { }
     /// ]]>
-    /// - If the type implements multiple interfaces register it once per interface:
+    /// - If the type implements multiple interfaces it is registered once per interface (but not by the type):
     /// <![CDATA[
     /// [Export]
     /// public sealed class Foo : IFoo, IBar
     /// { }
     /// ]]>
-    ///
+    /// - If the type implements multiple interfaces you can register the type only once
+    ///   by specifying the interface (or type) explicitely:
+    /// <![CDATA[
+    /// [Export(typeof(IFoo))]
+    /// public sealed class Foo : IFoo, IBar
+    /// { }
+    /// ]]>
+    /// - Per default types are registerd as transient. You can change that by specifing the
+    ///   lifetime as singelton:
+    /// <![CDATA[
+    /// [Export(Lifetime.Singelton)]
+    /// public sealed class Foo : IFoo, IBar
+    /// { }
+    /// ]]>
+    /// - And of course you can combine specifying a single interface with a custom lifetime:
+    /// <![CDATA[
+    /// [Export(typeof(IFoo), Lifetime.Singleton)]
+    /// public sealed class Foo : IFoo, IBar
+    /// { }
+    /// ]]>
+    /// 
     /// </example>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ExportAttribute : Attribute
     {
         #region Dependencies
