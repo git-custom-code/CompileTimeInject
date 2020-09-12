@@ -24,7 +24,14 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <param name="name"> The described type's name. </param>
         public TypeDescriptor(string @namespace, string name)
         {
-            FullName = $"{@namespace}.{name}";
+            if (string.IsNullOrEmpty(@namespace))
+            {
+                FullName = name;
+            }
+            else
+            {
+                FullName = $"{@namespace}.{name}";
+            }
         }
 
         #endregion
