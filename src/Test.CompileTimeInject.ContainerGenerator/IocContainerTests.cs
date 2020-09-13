@@ -99,5 +99,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.Null(foo);
             Assert.NotNull(bar);
         }
+
+        [Fact]
+        public void GetServicesByGenericContract()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.ByGenericContract.IFoo<int[,]>>();
+
+            // Then
+            Assert.NotNull(foo);
+        }
     }
 }
