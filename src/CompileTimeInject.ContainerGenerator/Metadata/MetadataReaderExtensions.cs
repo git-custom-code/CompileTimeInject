@@ -2,6 +2,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection.Metadata;
 
     /// <summary>
@@ -54,6 +55,51 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             }
 
             return exportedTypes;
+        }
+
+        /// <summary>
+        /// Gets a collection of <see cref="TypeDescriptor"/>s for each implemented interface for the
+        /// given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <param name="type"></param>
+        /// <returns> A collection of <see cref="TypeDescriptor"/>s for each implemented interface. </returns>
+        public static IEnumerable<TypeDescriptor> GetImplementedInterfaces(this MetadataReader reader, TypeDefinition type)
+        {
+            var interfaceImplementations = type.GetInterfaceImplementations();
+            if (interfaceImplementations.Count == 0)
+            {
+                return Enumerable.Empty<TypeDescriptor>();
+            }
+
+            var implementedInterfaces = new List<TypeDescriptor>();
+            foreach (var implementationHandle in interfaceImplementations)
+            {
+                var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
+
+                // interface is declared in the same assembly as the type
+                if (interfaceImplementation.Interface.Kind == HandleKind.TypeDefinition)
+                {
+                    var definition = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
+                    var @interface = reader.ToTypeDescriptor(definition);
+                    implementedInterfaces.Add(@interface);
+                }
+                // interface is declared in another assembly
+                else if (interfaceImplementation.Interface.Kind == HandleKind.TypeReference)
+                {
+                    var reference = reader.GetTypeReference((TypeReferenceHandle)interfaceImplementation.Interface);
+                    var @interface = reader.ToTypeDescriptor(reference);
+                    implementedInterfaces.Add(@interface);
+                }
+                // interface is generic
+                if (interfaceImplementation.Interface.Kind == HandleKind.TypeSpecification)
+                {
+                    var specification = reader.GetTypeSpecification((TypeSpecificationHandle)interfaceImplementation.Interface);
+                    var @interface = specification.DecodeSignature(new TypeDescriptorSignatureProvider(), null);
+                    implementedInterfaces.Add(@interface);
+                }
+            }
+            return implementedInterfaces;
         }
 
         /// <summary>

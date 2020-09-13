@@ -97,20 +97,17 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         }
                         else
                         {
-                            var interfaceImplementations = service.TypeDefinition.GetInterfaceImplementations();
-                            if (interfaceImplementations.Count == 0)
+                            var implementedInterfaces = reader.GetImplementedInterfaces(service.TypeDefinition);
+                            if (implementedInterfaces.Any())
                             {
-                                detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
+                                foreach (var @interface in implementedInterfaces)
+                                {
+                                    detectedServices.Add(new ServiceDescriptor(@interface, implementation, lifetime));
+                                }
                             }
                             else
                             {
-                                foreach (var implementationHandle in interfaceImplementations)
-                                {
-                                    var interfaceImplementation = reader.GetInterfaceImplementation(implementationHandle);
-                                    var contractType = reader.GetTypeDefinition((TypeDefinitionHandle)interfaceImplementation.Interface);
-                                    var contract = reader.ToTypeDescriptor(contractType);
-                                    detectedServices.Add(new ServiceDescriptor(contract, implementation, lifetime));
-                                }
+                                detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
                             }
                         }
                     }
