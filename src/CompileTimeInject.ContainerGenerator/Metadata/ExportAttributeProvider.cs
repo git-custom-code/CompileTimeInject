@@ -64,9 +64,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <inheritdoc />
         public TypeDescriptor GetSZArrayType(TypeDescriptor elementType)
         {
-            return new TypeDescriptor(
-                elementType.Namespace.ToString(),
-                $"{elementType.Name.ToString()}[]");
+            return new TypeDescriptor($"{elementType.FullName}[]");
         }
 
         /// <inheritdoc />
@@ -86,10 +84,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <inheritdoc />
         public TypeDescriptor GetTypeFromSerializedName(string name)
         {
-            var index = name.LastIndexOf('.');
-            var typeNamespace = name.Substring(0, index);
-            var typeName = name.Substring(index + 1);
-            return new TypeDescriptor(typeNamespace, typeName);
+            return new TypeDescriptor(name);
         }
 
         /// <inheritdoc />

@@ -12,10 +12,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <summary>
         /// Creates a new instance of the <see cref="TypeDescriptor"/> type.
         /// </summary>
-        /// <param name="name"> The described type's name. </param>
-        public TypeDescriptor(string name)
-            : this(string.Empty, name)
-        { }
+        /// <param name="fullName"> The described type's full name. </param>
+        public TypeDescriptor(string fullName)
+        {
+            FullName = fullName;
+        }
 
         /// <summary>
         /// Creates a new instane of the <see cref="TypeDescriptor"/> type.
@@ -23,16 +24,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <param name="namespace"> The described type's namespace. </param>
         /// <param name="name"> The described type's name. </param>
         public TypeDescriptor(string @namespace, string name)
-        {
-            if (string.IsNullOrEmpty(@namespace))
-            {
-                FullName = name;
-            }
-            else
-            {
-                FullName = $"{@namespace}.{name}";
-            }
-        }
+            : this($"{@namespace}.{name}")
+        { }
 
         #endregion
 
