@@ -91,9 +91,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         }
 
                         var implementation = reader.ToTypeDescriptor(service.TypeDefinition);
+                        var dependencies = reader.GetConstructorDependencies(service.TypeDefinition);
                         if (contractFilter.HasValue)
                         {
-                            detectedServices.Add(new ServiceDescriptor(contractFilter.Value, implementation, lifetime));
+                            detectedServices.Add(new ServiceDescriptor(contractFilter.Value, implementation, dependencies, lifetime));
                         }
                         else
                         {
@@ -102,12 +103,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             {
                                 foreach (var @interface in implementedInterfaces)
                                 {
-                                    detectedServices.Add(new ServiceDescriptor(@interface, implementation, lifetime));
+                                    detectedServices.Add(new ServiceDescriptor(@interface, implementation, dependencies, lifetime));
                                 }
                             }
                             else
                             {
-                                detectedServices.Add(new ServiceDescriptor(implementation, lifetime));
+                                detectedServices.Add(new ServiceDescriptor(implementation, dependencies, lifetime));
                             }
                         }
                     }
@@ -156,6 +157,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             code.AppendLine($"{t}public sealed partial class ServiceFactory");
 
             var serviceGroups = services.GroupBy(service => service.Contract).ToList();
+
+            #region Interface Implementations
+
             if (serviceGroups.Any())
             {
                 var separator = ":";
@@ -172,7 +176,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     separator = ",";
                 }
             }
+
+            #endregion
+
             code.AppendLine($"{t}{{");
+
+            #region Singleton Instances
 
             // Data
             code.AppendLine($"{t}{t}#region Data");
@@ -185,6 +194,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             code.AppendLine($"{t}{t}#endregion");
             code.AppendLine();
 
+            #endregion
+
             // Logic
             code.AppendLine($"{t}{t}#region Logic");
             code.AppendLine();
@@ -193,6 +204,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             {
                 if (serviceGroup.Count() > 1)
                 {
+                    #region IEnumerable<Contract>
+
                     code.AppendLine($"{t}{t}/// <inheritdoc />");
                     code.AppendLine($"{t}{t}IEnumerable<{serviceGroup.Key.FullName}> IServiceFactory<IEnumerable<{serviceGroup.Key.FullName}>>.CreateOrGetService()");
                     code.AppendLine($"{t}{t}{{");
@@ -200,27 +213,71 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     code.AppendLine();
 
                     var implementationCount = 0;
+                    var index = 0;
                     foreach (var service in serviceGroup)
                     {
                         if (service.Lifetime == Lifetime.Singleton)
                         {
-                            code.AppendLine($"{t}{t}{t}var service{implementationCount} = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ => new {service.Implementation.FullName}());");
+                            #region Singleton Service
+
+                            var localIndex = index;
+                            code.AppendLine($"{t}{t}{t}var service{++implementationCount} = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>");
+                            code.AppendLine($"{t}{t}{t}{t}{{");
+                            
+                            foreach (var dependency in service.Dependencies)
+                            {
+                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            }
+                            code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
+                            if (service.Dependencies.Any())
+                            {
+                                code.Append($"dependency{++localIndex}");
+                            }
+                            foreach (var dependency in service.Dependencies.Skip(1))
+                            {
+                                code.Append($", dependency{++localIndex}");
+                            }
+                            code.AppendLine(");");
+                            code.AppendLine($"{t}{t}{t}{t}{t}return service;");
+                            code.AppendLine($"{t}{t}{t}{t}}});");
+
+                            #endregion
                         }
                         else
                         {
-                            code.AppendLine($"{t}{t}{t}var service{implementationCount} = new {service.Implementation.FullName}();");
+                            #region Transient Service
+
+                            var localIndex = index;
+                            foreach (var dependency in service.Dependencies)
+                            {
+                                code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            }
+                            code.Append($"{t}{t}{t}var service{++implementationCount} = new {service.Implementation.FullName}(");
+                            if (service.Dependencies.Any())
+                            {
+                                code.Append($"dependency{++localIndex}");
+                            }
+                            foreach (var dependency in service.Dependencies.Skip(1))
+                            {
+                                code.Append($", dependency{++localIndex}");
+                            }
+                            code.AppendLine(");");
+
+                            #endregion
                         }
 
                         code.AppendLine($"{t}{t}{t}services.Add(service{implementationCount});");
                         code.AppendLine();
-                        ++implementationCount;
                     }
 
                     code.AppendLine($"{t}{t}{t}return services;");
                     code.AppendLine($"{t}{t}}}");
+
+                    #endregion
                 }
                 else
                 {
+                    #region Contract
 
                     var service = serviceGroup.First();
                     code.AppendLine($"{t}{t}/// <inheritdoc />");
@@ -229,15 +286,59 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                     if (service.Lifetime == Lifetime.Singleton)
                     {
-                        code.AppendLine($"{t}{t}{t}var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ => new {service.Implementation.FullName}());");
+                        #region Singleton Service
+
+                        code.AppendLine($"{t}{t}{t}var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>");
+                        code.AppendLine($"{t}{t}{t}{t}{{");
+                        var index = 0;
+                        foreach (var dependency in service.Dependencies)
+                        {
+                            code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                        }
+                        code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
+                        if (service.Dependencies.Any())
+                        {
+                            code.Append("dependency1");
+                        }
+                        index = 1;
+                        foreach (var dependency in service.Dependencies.Skip(1))
+                        {
+                            code.Append($", dependency{++index}");
+                        }
+                        code.AppendLine(");");
+                        code.AppendLine($"{t}{t}{t}{t}{t}return service;");
+                        code.AppendLine($"{t}{t}{t}{t}}});");
+
+                        #endregion
                     }
                     else
                     {
-                        code.AppendLine($"{t}{t}{t}var service = new {service.Implementation.FullName}();");
+                        #region Transient Service
+
+                        var index = 0;
+                        foreach (var dependency in service.Dependencies)
+                        {
+                            code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                        }
+                        code.Append($"{t}{t}{t}var service = new {service.Implementation.FullName}(");
+                        if (service.Dependencies.Any())
+                        {
+                            code.Append("dependency1");
+                        }
+                        index = 1;
+                        foreach (var dependency in service.Dependencies.Skip(1))
+                        {
+                            code.Append($", dependency{++index}");
+                        }
+                        code.AppendLine(");");
+
+                        #endregion
                     }
 
                     code.AppendLine($"{t}{t}{t}return service;");
                     code.AppendLine($"{t}{t}}}");
+
+                    #endregion
                 }
                 code.AppendLine();
             }

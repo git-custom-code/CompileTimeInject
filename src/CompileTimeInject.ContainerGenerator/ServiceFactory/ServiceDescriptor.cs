@@ -1,5 +1,8 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     /// <summary>
     /// A data object that describes a detected service type that is annotated
     /// with an <see cref="ExportAttribute"/>.
@@ -12,9 +15,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// Creates a new instance of the <see cref="ServiceDescriptor"/> type.
         /// </summary>
         /// <param name="implementation"> The described service's implementation type. </param>
+        /// <param name="dependencies"> The service's (constructor) dependencies, that need to be injected. </param>
         /// <param name="lifetime"> The service's lifetime policy. </param>
-        public ServiceDescriptor(TypeDescriptor implementation, Lifetime lifetime)
-            : this(implementation, implementation, lifetime)
+        public ServiceDescriptor(
+            TypeDescriptor implementation,
+            IEnumerable<TypeDescriptor>? dependencies = null,
+            Lifetime lifetime = Lifetime.Transient)
+            : this(implementation, implementation, dependencies, lifetime)
         { }
 
         /// <summary>
@@ -22,10 +29,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// </summary>
         /// <param name="contract"> The described service's implemented contract type. </param>
         /// <param name="implementation"> The described service's implementation type. </param>
+        /// <param name="dependencies"> The service's (constructor) dependencies, that need to be injected. </param>
         /// <param name="lifetime"> The service's lifetime policy. </param>
-        public ServiceDescriptor(TypeDescriptor contract, TypeDescriptor implementation, Lifetime lifetime)
+        public ServiceDescriptor(
+            TypeDescriptor contract,
+            TypeDescriptor implementation,
+            IEnumerable<TypeDescriptor>? dependencies = null,
+            Lifetime lifetime = Lifetime.Transient)
         {
             Contract = contract;
+            Dependencies = dependencies ?? Enumerable.Empty<TypeDescriptor>();
             Implementation = implementation;
             Lifetime = lifetime;
         }
@@ -43,6 +56,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// Gets the described service's implementation type.
         /// </summary>
         public TypeDescriptor Implementation { get; }
+
+        /// <summary>
+        /// Gets the service's (constructor) dependencies, that need to be injected.
+        /// </summary>
+        public IEnumerable<TypeDescriptor> Dependencies { get; }
 
         /// <summary>
         /// Gets the service's lifetime policy.

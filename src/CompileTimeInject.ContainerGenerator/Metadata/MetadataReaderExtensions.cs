@@ -3,6 +3,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
     using System.Reflection.Metadata;
 
     /// <summary>
@@ -13,7 +14,36 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         #region Logic
 
         /// <summary>
-        /// Get a collection of <see cref="ServiceMetadata"/>s for all types that are annotated
+        /// Gets a collection of <see cref="TypeDescriptor"/>s for each constructor dependency that needs
+        /// to be injected for a given <paramref name="type"/> instance.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <param name="type"> The type whose constructor dependencies should be returned. </param>
+        /// <returns> A collection of <see cref="TypeDescriptor"/>s for constructor dependency. </returns>
+        public static IEnumerable<TypeDescriptor> GetConstructorDependencies(this MetadataReader reader, TypeDefinition type)
+        {
+            var dependencies = new List<TypeDescriptor>();
+            foreach (var handle in type.GetMethods())
+            {
+                var method = reader.GetMethodDefinition(handle);
+                if ((method.Attributes & MethodAttributes.SpecialName) != 0 &&
+                    (method.Attributes & MethodAttributes.Public) != 0 &&
+                    reader.GetString(method.Name) == ".ctor")
+                {
+                    var signature = method.DecodeSignature(new TypeDescriptorSignatureProvider(), null);
+                    foreach (var dependency in signature.ParameterTypes)
+                    {
+                        dependencies.Add(dependency);
+                    }
+
+                    break; // ToDo: How to handle multiple ctor's?
+                }
+            }
+            return dependencies;
+        }
+
+        /// <summary>
+        /// Gets a collection of <see cref="ServiceMetadata"/>s for all types that are annotated
         /// with an <see cref="ExportAttribute"/>.
         /// </summary>
         /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
@@ -62,7 +92,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// given <paramref name="type"/>.
         /// </summary>
         /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
-        /// <param name="type"></param>
+        /// <param name="type"> The type whose implemented interfaces should be returned. </param>
         /// <returns> A collection of <see cref="TypeDescriptor"/>s for each implemented interface. </returns>
         public static IEnumerable<TypeDescriptor> GetImplementedInterfaces(this MetadataReader reader, TypeDefinition type)
         {
