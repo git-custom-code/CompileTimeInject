@@ -112,5 +112,71 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             // Then
             Assert.NotNull(foo);
         }
+
+        [Fact]
+        public void WithSingleDependency()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.WithSingleDependency.IFoo>();
+
+            // Then
+            Assert.NotNull(foo);
+            Assert.NotNull(foo?.Dependency);
+        }
+
+        [Fact]
+        public void WithMultipleDependencies()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.WithMultipleDependencies.IFoo>();
+
+            // Then
+            Assert.NotNull(foo);
+            Assert.NotNull(foo?.TransientDependency);
+            Assert.NotNull(foo?.SingletonDependency);
+        }
+
+        [Fact]
+        public void WithCollectionDependency()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.WithCollectionDependency.IFoo>();
+
+            // Then
+            Assert.NotNull(foo);
+            Assert.NotNull(foo?.Dependencies);
+            Assert.Equal(2, foo?.Dependencies.Count());
+        }
+
+        [Fact]
+        public void ByMultipleImplementationsWithDependencies()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var fooCollection = container.GetServices<directRef.ByMultipleImplementationsWithDependencies.IFoo>();
+
+            // Then
+            Assert.NotNull(fooCollection);
+            Assert.Equal(2, fooCollection.Count());
+            foreach(var foo in fooCollection)
+            {
+                Assert.NotNull(foo);
+                foreach(var dependency in foo.Dependencies)
+                {
+                    Assert.NotNull(dependency);
+                }
+            }
+        }
     }
 }
