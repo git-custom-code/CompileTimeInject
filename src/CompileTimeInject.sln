@@ -36,6 +36,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTimeInject.ContainerGenerator", "CompileTimeInject.ContainerGenerator\CompileTimeInject.ContainerGenerator.csproj", "{193A19DF-1EAF-4DB1-82BF-617C0E116E48}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.CompileTimeInject.ContainerGenerator", "Test.CompileTimeInject.ContainerGenerator\Test.CompileTimeInject.ContainerGenerator.csproj", "{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}"
+	ProjectSection(ProjectDependencies) = postProject
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48} = {193A19DF-1EAF-4DB1-82BF-617C0E116E48}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.DirectReference", "Test.DirectRefence\Test.DirectReference.csproj", "{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}"
 EndProject
