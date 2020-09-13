@@ -42,23 +42,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		GitHub|Any CPU = GitHub|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
+		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
 		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
+		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
+		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2321A8BB-20C1-48D9-85A8-A9CE6A6D7037}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
+		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

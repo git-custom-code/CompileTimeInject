@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
+    <Configurations>Debug;Release;GitHub</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

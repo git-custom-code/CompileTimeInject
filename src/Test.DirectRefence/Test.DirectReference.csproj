@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Test.DirectReference</RootNamespace>
+    <Configurations>Debug;Release;GitHub</Configurations>
   </PropertyGroup>
   
   <ItemGroup>

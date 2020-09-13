@@ -5,6 +5,7 @@
     <Title>CompileTimeInject source generator attributes.</Title>
     <Description>C# attributes that can be used to annotate types for the inversion of control source generator.</Description>
     <RootNamespace>CustomCode.CompileTimeInject</RootNamespace>
+    <Configurations>Debug;Release;GitHub</Configurations>
   </PropertyGroup>
 
 </Project>

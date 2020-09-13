@@ -5,6 +5,7 @@
     <Title>CompileTimeInject source generator.</Title>
     <Description>C# source generator for creating an inversion of control container at compile time.</Description>
     <RootNamespace>CustomCode.CompileTimeInject.ContainerGenerator</RootNamespace>
+    <Configurations>Debug;Release;GitHub</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
