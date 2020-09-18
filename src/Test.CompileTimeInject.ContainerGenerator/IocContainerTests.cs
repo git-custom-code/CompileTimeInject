@@ -178,5 +178,19 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                 }
             }
         }
+
+        [Fact]
+        public void WithFactoryDependency()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.WithFactoryDependency.IFoo>();
+
+            // Then
+            Assert.NotNull(foo);
+            Assert.NotNull(foo?.Dependency);
+        }
     }
 }
