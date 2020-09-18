@@ -226,7 +226,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             
                             foreach (var dependency in service.Dependencies)
                             {
-                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                                if (dependency.FullName.StartsWith("System.Func<"))
+                                {
+                                    var start = "System.Func<".Length;
+                                    var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
+                                    code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
+                                }
+                                else
+                                {
+                                    code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                                }
                             }
                             code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
                             if (service.Dependencies.Any())
@@ -250,7 +259,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             var localIndex = index;
                             foreach (var dependency in service.Dependencies)
                             {
-                                code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                                if (dependency.FullName.StartsWith("System.Func<"))
+                                {
+                                    var start = "System.Func<".Length;
+                                    var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
+                                    code.AppendLine($"{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
+                                }
+                                else
+                                {
+                                    code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                                }
                             }
                             code.Append($"{t}{t}{t}var service{++implementationCount} = new {service.Implementation.FullName}(");
                             if (service.Dependencies.Any())
@@ -293,7 +311,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         var index = 0;
                         foreach (var dependency in service.Dependencies)
                         {
-                            code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            if (dependency.FullName.StartsWith("System.Func<"))
+                            {
+                                var start = "System.Func<".Length;
+                                var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
+                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
+                            }
+                            else
+                            {
+                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            }
                         }
                         code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
                         if (service.Dependencies.Any())
@@ -318,7 +345,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         var index = 0;
                         foreach (var dependency in service.Dependencies)
                         {
-                            code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            if (dependency.FullName.StartsWith("System.Func<"))
+                            {
+                                var start = "System.Func<".Length;
+                                var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
+                                code.AppendLine($"{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
+                            }
+                            else
+                            {
+                                code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
+                            }
                         }
                         code.Append($"{t}{t}{t}var service = new {service.Implementation.FullName}(");
                         if (service.Dependencies.Any())
