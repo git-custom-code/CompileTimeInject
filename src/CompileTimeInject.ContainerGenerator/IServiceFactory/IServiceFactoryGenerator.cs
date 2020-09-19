@@ -1,5 +1,6 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
+    using CodeGeneration;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
@@ -62,28 +63,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <returns> The created in-memory source code. </returns>
         private string CreateServiceFactoryInterface()
         {
-            const string t = "    ";
-
-            var code = new StringBuilder();
-            code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
-            code.AppendLine("{");
-
-            code.AppendLine($"{t}/// <summary>");
-            code.AppendLine($"{t}/// Interface for a factory that is able to create a new instance of a service that implements a given contract.");
-            code.AppendLine($"{t}/// </summary>");
-            code.AppendLine($"{t}/// <typeparam name=\"T\"> The type of the contract that is implemented by the service. </typeparam>");
-            code.AppendLine($"{t}public interface IServiceFactory<T> where T : class");
-            code.AppendLine($"{t}{{");
-
-            code.AppendLine($"{t}/// <summary>");
-            code.AppendLine($"{t}/// Creates a new service instance that implements a contract of type <typeparamref name=\"T\"/>.");
-            code.AppendLine($"{t}/// </summary>");
-            code.AppendLine($"{t}/// <returns> The newly created service instance. </returns>");
-            code.AppendLine($"{t}{t}T CreateOrGetService();");
-
-            code.AppendLine($"{t}}}");
-
-            code.AppendLine("}");
+            var code = new CodeBuilder(
+                "namespace CustomCode.CompileTimeInject.GeneratedCode")
+                .BeginScope(
+                    "/// <summary>",
+                    "/// Interface for a factory that is able to create a new instance of a service that implements a given contract.",
+                    "/// </summary>",
+                    "/// <typeparam name=\"T\"> The type of the contract that is implemented by the service. </typeparam>",
+                    "public interface IServiceFactory<T> where T : class")
+                    .BeginScope(
+                        "/// <summary>",
+                        "/// Creates a new service instance that implements a contract of type <typeparamref name=\"T\"/>.",
+                        "/// </summary>",
+                        "/// <returns> The newly created service instance. </returns>",
+                        "T CreateOrGetService();")
+                    .EndScope()
+                .EndScope();
             return code.ToString();
         }
 

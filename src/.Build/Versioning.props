@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
     <FileVersion>$(Version)</FileVersion>
     <SemVer>$(Version)</SemVer>
     <InformationalVersion>$(SemVer)+build.developer</InformationalVersion>

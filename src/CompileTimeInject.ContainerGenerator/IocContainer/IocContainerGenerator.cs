@@ -1,9 +1,9 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
+    using CodeGeneration;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
@@ -89,75 +89,66 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <returns> The created in-memory source code. </returns>
         private string CreateIocContainerType()
         {
-            const string t = "    ";
+            var _ = string.Empty;
 
-            var code = new StringBuilder();
-            code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
-            code.AppendLine("{");
-            code.AppendLine($"{t}using System.Collections.Generic;");
-            code.AppendLine($"{t}using System.Linq;");
-            code.AppendLine();
-
-            code.AppendLine($"{t}/// <summary>");
-            code.AppendLine($"{t}/// A compile time generated inversion of control container.");
-            code.AppendLine($"{t}/// </summary>");
-            code.AppendLine($"{t}public sealed class IocContainer");
-            code.AppendLine($"{t}{{");
-
-            // Dependencies
-            code.AppendLine($"{t}{t}#region Dependencies");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}/// <summary>");
-            code.AppendLine($"{t}{t}/// Gets the generated factory that is used to create service instances.");
-            code.AppendLine($"{t}{t}/// </summary>");
-            code.AppendLine($"{t}{t}private ServiceFactory Factory {{ get; }} = new ServiceFactory();");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}#endregion");
-            code.AppendLine();
-
-            // Logic
-            code.AppendLine($"{t}{t}#region Logic");
-            code.AppendLine();
-
-            code.AppendLine($"{t}{t}/// <summary>");
-            code.AppendLine($"{t}{t}/// Gets a service implementation by contract.");
-            code.AppendLine($"{t}{t}/// </summary>");
-            code.AppendLine($"{t}{t}/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>");
-            code.AppendLine($"{t}{t}/// <returns> The contract's service implementation or null if no such implementation exists. </returns>");
-            code.AppendLine($"{t}{t}public T? GetService<T>() where T : class");
-            code.AppendLine($"{t}{t}{{");
-            code.AppendLine($"{t}{t}{t}var factory = Factory as IServiceFactory<T>;");
-            code.AppendLine($"{t}{t}{t}return factory?.CreateOrGetService();");
-            code.AppendLine($"{t}{t}}}");
-            code.AppendLine();
-
-            code.AppendLine($"{t}{t}/// <summary>");
-            code.AppendLine($"{t}{t}/// Gets a collection of service implementations of the same contract.");
-            code.AppendLine($"{t}{t}/// </summary>");
-            code.AppendLine($"{t}{t}/// <typeparam name=\"T\"> The service contract whose implementations should be retrieved. </typeparam>");
-            code.AppendLine($"{t}{t}/// <returns> The service contract's implementations or <see cref=\"Enumerable.Empty{{T}}\"/> if no such implementations exists. </returns>");
-            code.AppendLine($"{t}{t}public IEnumerable<T> GetServices<T>() where T : class");
-            code.AppendLine($"{t}{t}{{");
-            code.AppendLine($"{t}{t}{t}var collectionFactory = Factory as IServiceFactory<IEnumerable<T>>;");
-            code.AppendLine($"{t}{t}{t}if (collectionFactory != null)");
-            code.AppendLine($"{t}{t}{t}{{");
-            code.AppendLine($"{t}{t}{t}{t}return collectionFactory.CreateOrGetService();");
-            code.AppendLine($"{t}{t}{t}}}");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}{t}var factory = Factory as IServiceFactory<T>;");
-            code.AppendLine($"{t}{t}{t}if (factory != null)");
-            code.AppendLine($"{t}{t}{t}{{");
-            code.AppendLine($"{t}{t}{t}{t}return new List<T> {{ factory.CreateOrGetService() }};");
-            code.AppendLine($"{t}{t}{t}}}");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}{t}return Enumerable.Empty<T>();");
-            code.AppendLine($"{t}{t}}}");
-            code.AppendLine();
-
-            code.AppendLine($"{t}{t}#endregion");
-
-            code.AppendLine($"{t}}}");
-            code.AppendLine("}");
+            var code = new CodeBuilder(
+                "namespace CustomCode.CompileTimeInject.GeneratedCode")
+                .BeginScope(
+                    "using System.Collections.Generic;",
+                    "using System.Linq;",
+                    _,
+                    "/// <summary>",
+                    "/// A compile time generated inversion of control container.",
+                    "/// </summary>",
+                    "public sealed class IocContainer")
+                    .BeginScope(
+                        "#region Dependencies",
+                        _,
+                        "/// <summary>",
+                        "/// Gets the generated factory that is used to create service instances.",
+                        "/// </summary>",
+                        "private ServiceFactory Factory { get; } = new ServiceFactory();",
+                        _,
+                        "#endregion",
+                        _,
+                        "#region Logic",
+                        _,
+                        "/// <summary>",
+                        "/// Gets a service implementation by contract.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <returns> The contract's service implementation or null if no such implementation exists. </returns>",
+                        "public T? GetService<T>() where T : class")
+                        .BeginScope(
+                            "var factory = Factory as IServiceFactory<T>;",
+                            "return factory?.CreateOrGetService();")
+                        .EndScope(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a collection of service implementations of the same contract.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementations should be retrieved. </typeparam>",
+                        "/// <returns> The service contract's implementations or <see cref=\"Enumerable.Empty{T}\"/> if no such implementations exists. </returns>",
+                        "public IEnumerable<T> GetServices<T>() where T : class")
+                        .BeginScope(
+                            "var collectionFactory = Factory as IServiceFactory<IEnumerable<T>>;",
+                            "if (collectionFactory != null)")
+                            .BeginScope(
+                                "return collectionFactory.CreateOrGetService();")
+                            .EndScope(
+                        _,
+                        "var factory = Factory as IServiceFactory<T>;",
+                        "if (factory != null)")
+                        .BeginScope(
+                            "return new List<T> { factory.CreateOrGetService() };")
+                        .EndScope(
+                        _,
+                        "return Enumerable.Empty<T>();")
+                    .EndScope(
+                    _,
+                    "#endregion")
+                .EndScope()
+            .EndScope();
             return code.ToString();
         }
 
