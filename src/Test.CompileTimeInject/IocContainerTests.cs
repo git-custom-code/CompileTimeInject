@@ -1,4 +1,4 @@
-namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
+namespace CustomCode.CompileTimeInject.Tests
 {
     using GeneratedCode;
     using System.Linq;
