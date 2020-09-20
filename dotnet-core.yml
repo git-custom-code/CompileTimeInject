@@ -1,0 +1,23 @@
+name: Test
+
+on:
+ workflow_run:
+    workflows: ["Build"]
+    branches: [main]
+    types: completed
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.100-preview.8.20417.9
+    - name: Install dependencies
+      run: dotnet restore ./src/CompileTimeInject.sln
+    - name: Test
+      run: dotnet test ./src/CompileTimeInject.sln --configuration GitHub --no-restore --verbosity normal
