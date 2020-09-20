@@ -21,5 +21,3 @@ jobs:
       run: dotnet restore ./src/CompileTimeInject.sln
     - name: Build
       run: dotnet build ./src/CompileTimeInject.sln --configuration GitHub --no-restore
-    - name: Test
-      run: dotnet test ./src/CompileTimeInject.sln --configuration GitHub --no-restore --verbosity normal
