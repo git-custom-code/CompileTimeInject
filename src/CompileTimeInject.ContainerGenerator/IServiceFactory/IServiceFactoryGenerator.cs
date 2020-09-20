@@ -27,13 +27,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         #region Logic
 
         /// <inheritdoc />
-        public void Initialize(InitializationContext context)
+        public void Initialize(GeneratorInitializationContext context)
         {
             // No initialization required for this generator
         }
 
         /// <inheritdoc />
-        public void Execute(SourceGeneratorContext context)
+        public void Execute(GeneratorExecutionContext context)
         {
             try
             {

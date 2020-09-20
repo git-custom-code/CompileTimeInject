@@ -48,18 +48,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// ]]>
     /// </example>
     [Generator]
-    public sealed class IocConainerGenerator : ISourceGenerator
+    public sealed class IocContainerGenerator : ISourceGenerator
     {
         #region Logic
 
         /// <inheritdoc />
-        public void Initialize(InitializationContext context)
+        public void Initialize(GeneratorInitializationContext context)
         {
             // No initialization required for this generator
         }
 
         /// <inheritdoc />
-        public void Execute(SourceGeneratorContext context)
+        public void Execute(GeneratorExecutionContext context)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     new DiagnosticDescriptor(
                         id: "CTI003",
                         title: "Can't generate the IocContainer type",
-                        messageFormat: $"{nameof(IocConainerGenerator)}: {{0}}",
+                        messageFormat: $"{nameof(IocContainerGenerator)}: {{0}}",
                         category: "CompileTimeInject.ContainerGenerator",
                         defaultSeverity: DiagnosticSeverity.Error,
                         isEnabledByDefault: true,
