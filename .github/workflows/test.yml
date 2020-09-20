@@ -3,8 +3,8 @@ name: Test
 on:
  workflow_run:
     workflows: ["Build"]
-    branches: [main]
-    types: [completed]
+    branches: [ master ]
+    types: [ completed ]
 jobs:
   build:
 
