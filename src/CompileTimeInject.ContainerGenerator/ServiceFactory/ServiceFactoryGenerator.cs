@@ -1,6 +1,7 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
-    using CustomCode.CompileTimeInject.ContainerGenerator.Metadata;
+    using CodeGeneration;
+    using Metadata;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
@@ -8,6 +9,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using System.Linq;
     using System.Reflection.Metadata;
     using System.Text;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the ServiceFactory type.
@@ -141,249 +143,134 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <returns> The created in-memory source code. </returns>
         private string CreateServiceFactory(IEnumerable<ServiceDescriptor> services)
         {
-            const string t = "    ";
+            var _ = string.Empty;
+            var separator = new InterfaceSeparator();
 
-            var code = new StringBuilder();
-            code.AppendLine("namespace CustomCode.CompileTimeInject.GeneratedCode");
-            code.AppendLine("{");
-            code.AppendLine($"{t}using System;");
-            code.AppendLine($"{t}using System.Collections.Concurrent;");
-            code.AppendLine($"{t}using System.Collections.Generic;");
-            code.AppendLine();
+            var serviceGroups = services
+                .GroupBy(service => service.Contract)
+                .ToList();
 
-            code.AppendLine($"{t}/// <summary>");
-            code.AppendLine($"{t}/// Default implementation for each <see cref=\"IServiceFactory{{T}}\"/> interface.");
-            code.AppendLine($"{t}/// </summary>");
-            code.AppendLine($"{t}public sealed partial class ServiceFactory");
+            var contractImplementation = serviceGroups
+                .Where(group => group.Count() == 1)
+                .Select(group => group.First())
+                .ToList();
+            var transientContractImplementation = contractImplementation
+                .Where(service => service.Lifetime == Lifetime.Transient);
+            var singletonContractImplementation = contractImplementation
+                .Where(service => service.Lifetime == Lifetime.Singleton);
 
-            var serviceGroups = services.GroupBy(service => service.Contract).ToList();
+            var sharedContractImplementation = serviceGroups
+                .Where(group => group.Count() > 1)
+                .ToList();
 
-            #region Interface Implementations
+            var code = new CodeBuilder(
+                "namespace CustomCode.CompileTimeInject.GeneratedCode")
+                .BeginScope(
+                    "using System;",
+                    "using System.Collections.Concurrent;",
+                    "using System.Collections.Generic;",
+                    _,
+                    "/// <summary>",
+                    "/// Default implementation for each <see cref=\"IServiceFactory{T}\"/> interface.",
+                    "/// </summary>",
+                    "public sealed partial class ServiceFactory")
+                .ForEach(contractImplementation, service =>
+                       $"{separator} IServiceFactory<{service.Contract.FullName}>")
+                .ForEach(sharedContractImplementation, sharedContract =>
+                       $"{separator} IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>")
+                    .BeginScope(
+                        "#region Data",
+                        _,
+                        "/// <summary>",
+                        "/// Gets a cache for created singleton service instances.",
+                        "/// </summary>",
+                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; } = new ConcurrentDictionary<Type, object>();",
+                        _,
+                        "#endregion",
+                        _,
+                        "#region Logic")
 
-            if (serviceGroups.Any())
-            {
-                var separator = ":";
-                foreach (var serviceGroup in serviceGroups)
-                {
-                    if (serviceGroup.Count() > 1)
-                    {
-                        code.AppendLine($"{t}{t}{separator} IServiceFactory<IEnumerable<{serviceGroup.Key.FullName}>>");
-                    }
-                    else
-                    {
-                        code.AppendLine($"{t}{t}{separator} IServiceFactory<{serviceGroup.Key.FullName}>");
-                    }
-                    separator = ",";
-                }
-            }
+                    // contracts with a single implementation with Lifetime.Transient
 
-            #endregion
+                    .ForEach(transientContractImplementation, (service, code) => code.ContinueWith(
+                        _,
+                        "/// <inheritdoc />",
+                       $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
+                        .BeginScope()
+                        .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                         ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                         : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                        .ContinueWith(
+                           $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                            "return service;")
+                        .EndScope())
 
-            code.AppendLine($"{t}{{");
+                    // contracts with a single implementation with Lifetime.Singleton
 
-            #region Singleton Instances
+                    .ForEach(singletonContractImplementation, (service, code) => code.ContinueWith(
+                        _,
+                        "/// <inheritdoc />",
+                       $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
+                        .BeginScope(
+                           $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                            .BeginInlineLambdaScope()
+                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ContinueWith(
+                               $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                                "return service;")
+                            .EndInlineLambdaScope(");").ContinueWith(
+                            "return service;")
+                        .EndScope())
 
-            // Data
-            code.AppendLine($"{t}{t}#region Data");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}/// <summary>");
-            code.AppendLine($"{t}{t}/// Gets a cache for created singleton service instances.");
-            code.AppendLine($"{t}{t}/// </summary>");
-            code.AppendLine($"{t}{t}private ConcurrentDictionary<Type, object> SingletonInstances {{ get; }} = new ConcurrentDictionary<Type, object>();");
-            code.AppendLine();
-            code.AppendLine($"{t}{t}#endregion");
-            code.AppendLine();
+                    // contracts with multiple implementations ...
 
-            #endregion
+                    .ForEach(sharedContractImplementation, (sharedContract, code) => code.ContinueWith(
+                        _,
+                        "/// <inheritdoc />",
+                       $"IEnumerable<{sharedContract.Key.FullName}> IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>.CreateOrGetService()")
+                        .BeginScope(
+                           $"var services = new List<{sharedContract.Key.FullName}>();")
 
-            // Logic
-            code.AppendLine($"{t}{t}#region Logic");
-            code.AppendLine();
+                        // ... with Lifetime.Transient
 
-            foreach (var serviceGroup in serviceGroups)
-            {
-                if (serviceGroup.Count() > 1)
-                {
-                    #region IEnumerable<Contract>
+                        .ForEach(sharedContract.TransientServices(), (service, code) => code
+                        .BeginScope()
+                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ContinueWith(
+                               $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                               $"services.Add(service);")
+                        .EndScope())
 
-                    code.AppendLine($"{t}{t}/// <inheritdoc />");
-                    code.AppendLine($"{t}{t}IEnumerable<{serviceGroup.Key.FullName}> IServiceFactory<IEnumerable<{serviceGroup.Key.FullName}>>.CreateOrGetService()");
-                    code.AppendLine($"{t}{t}{{");
-                    code.AppendLine($"{t}{t}{t}var services = new List<{serviceGroup.Key.FullName}>();");
-                    code.AppendLine();
+                        // ... with Lifetime.Singleton
 
-                    var implementationCount = 0;
-                    var index = 0;
-                    foreach (var service in serviceGroup)
-                    {
-                        if (service.Lifetime == Lifetime.Singleton)
-                        {
-                            #region Singleton Service
+                        .ForEach(sharedContract.SingletonServices(), (service, code) => code
+                        .BeginScope(
+                           $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                            .BeginInlineLambdaScope()
+                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ContinueWith(
+                               $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                                "return service;")
+                            .EndInlineLambdaScope(");").ContinueWith(
+                            "services.Add(service);")
+                        .EndScope())
 
-                            var localIndex = index;
-                            code.AppendLine($"{t}{t}{t}var service{++implementationCount} = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>");
-                            code.AppendLine($"{t}{t}{t}{t}{{");
-                            
-                            foreach (var dependency in service.Dependencies)
-                            {
-                                if (dependency.FullName.StartsWith("System.Func<"))
-                                {
-                                    var start = "System.Func<".Length;
-                                    var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
-                                    code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
-                                }
-                                else
-                                {
-                                    code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
-                                }
-                            }
-                            code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
-                            if (service.Dependencies.Any())
-                            {
-                                code.Append($"dependency{++localIndex}");
-                            }
-                            foreach (var dependency in service.Dependencies.Skip(1))
-                            {
-                                code.Append($", dependency{++localIndex}");
-                            }
-                            code.AppendLine(");");
-                            code.AppendLine($"{t}{t}{t}{t}{t}return service;");
-                            code.AppendLine($"{t}{t}{t}{t}}});");
+                        .ContinueWith(
+                            "return services;")
+                        .EndScope())
 
-                            #endregion
-                        }
-                        else
-                        {
-                            #region Transient Service
+                    .ContinueWith(
+                        _,
+                        "#endregion")
+                    .EndScope()
+                .EndScope();
 
-                            var localIndex = index;
-                            foreach (var dependency in service.Dependencies)
-                            {
-                                if (dependency.FullName.StartsWith("System.Func<"))
-                                {
-                                    var start = "System.Func<".Length;
-                                    var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
-                                    code.AppendLine($"{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
-                                }
-                                else
-                                {
-                                    code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
-                                }
-                            }
-                            code.Append($"{t}{t}{t}var service{++implementationCount} = new {service.Implementation.FullName}(");
-                            if (service.Dependencies.Any())
-                            {
-                                code.Append($"dependency{++localIndex}");
-                            }
-                            foreach (var dependency in service.Dependencies.Skip(1))
-                            {
-                                code.Append($", dependency{++localIndex}");
-                            }
-                            code.AppendLine(");");
-
-                            #endregion
-                        }
-
-                        code.AppendLine($"{t}{t}{t}services.Add(service{implementationCount});");
-                        code.AppendLine();
-                    }
-
-                    code.AppendLine($"{t}{t}{t}return services;");
-                    code.AppendLine($"{t}{t}}}");
-
-                    #endregion
-                }
-                else
-                {
-                    #region Contract
-
-                    var service = serviceGroup.First();
-                    code.AppendLine($"{t}{t}/// <inheritdoc />");
-                    code.AppendLine($"{t}{t}{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()");
-                    code.AppendLine($"{t}{t}{{");
-
-                    if (service.Lifetime == Lifetime.Singleton)
-                    {
-                        #region Singleton Service
-
-                        code.AppendLine($"{t}{t}{t}var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>");
-                        code.AppendLine($"{t}{t}{t}{t}{{");
-                        var index = 0;
-                        foreach (var dependency in service.Dependencies)
-                        {
-                            if (dependency.FullName.StartsWith("System.Func<"))
-                            {
-                                var start = "System.Func<".Length;
-                                var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
-                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
-                            }
-                            else
-                            {
-                                code.AppendLine($"{t}{t}{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
-                            }
-                        }
-                        code.Append($"{t}{t}{t}{t}{t}var service = new {service.Implementation.FullName}(");
-                        if (service.Dependencies.Any())
-                        {
-                            code.Append("dependency1");
-                        }
-                        index = 1;
-                        foreach (var dependency in service.Dependencies.Skip(1))
-                        {
-                            code.Append($", dependency{++index}");
-                        }
-                        code.AppendLine(");");
-                        code.AppendLine($"{t}{t}{t}{t}{t}return service;");
-                        code.AppendLine($"{t}{t}{t}{t}}});");
-
-                        #endregion
-                    }
-                    else
-                    {
-                        #region Transient Service
-
-                        var index = 0;
-                        foreach (var dependency in service.Dependencies)
-                        {
-                            if (dependency.FullName.StartsWith("System.Func<"))
-                            {
-                                var start = "System.Func<".Length;
-                                var dependencyName = dependency.FullName.Substring(start, dependency.FullName.Length - start - 1);
-                                code.AppendLine($"{t}{t}{t}var dependency{++index} = new Func<{dependencyName}>(((IServiceFactory<{dependencyName}>)this).CreateOrGetService);");
-                            }
-                            else
-                            {
-                                code.AppendLine($"{t}{t}{t}var dependency{++index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();");
-                            }
-                        }
-                        code.Append($"{t}{t}{t}var service = new {service.Implementation.FullName}(");
-                        if (service.Dependencies.Any())
-                        {
-                            code.Append("dependency1");
-                        }
-                        index = 1;
-                        foreach (var dependency in service.Dependencies.Skip(1))
-                        {
-                            code.Append($", dependency{++index}");
-                        }
-                        code.AppendLine(");");
-
-                        #endregion
-                    }
-
-                    code.AppendLine($"{t}{t}{t}return service;");
-                    code.AppendLine($"{t}{t}}}");
-
-                    #endregion
-                }
-                code.AppendLine();
-            }
-
-            code.AppendLine($"{t}{t}#endregion");
-
-            code.AppendLine($"{t}}}");
-
-            code.AppendLine("}");
             return code.ToString();
         }
 
