@@ -1,6 +1,6 @@
 namespace Test.DirectReference.ByMultipleImplementationsWithDependencies
 {
-    using CustomCode.CompileTimeInject;
+    using CustomCode.CompileTimeInject.Annotations;
     using Test.DirectReference.ByGenericContract;
 
     [Export]

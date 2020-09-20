@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTimeInject", "CompileTimeInject\CompileTimeInject.csproj", "{819066CF-1938-46E5-AD2A-B7A5E8F02F57}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5EE40D1B-1892-4CAC-A978-A030F68FF0B0}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
@@ -42,7 +40,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.CompileTimeInject.Cont
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.DirectReference", "Test.DirectRefence\Test.DirectReference.csproj", "{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.CompileTimeInject", "Test.CompileTimeInject\Test.CompileTimeInject.csproj", "{046DF10D-341A-4441-ABE9-453BC6070DE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.CompileTimeInject", "Test.CompileTimeInject\Test.CompileTimeInject.csproj", "{046DF10D-341A-4441-ABE9-453BC6070DE6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTimeInject.Annotations", "CompileTimeInject.Annotations\CompileTimeInject.Annotations.csproj", "{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,12 +51,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{819066CF-1938-46E5-AD2A-B7A5E8F02F57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{193A19DF-1EAF-4DB1-82BF-617C0E116E48}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
@@ -72,7 +66,6 @@ Global
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
-		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC9D5DF9-CB08-4347-B121-73CA5EAA5C51}.Release|Any CPU.Build.0 = Release|Any CPU
 		{046DF10D-341A-4441-ABE9-453BC6070DE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -80,6 +73,12 @@ Global
 		{046DF10D-341A-4441-ABE9-453BC6070DE6}.GitHub|Any CPU.ActiveCfg = Release|Any CPU
 		{046DF10D-341A-4441-ABE9-453BC6070DE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{046DF10D-341A-4441-ABE9-453BC6070DE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.GitHub|Any CPU.ActiveCfg = GitHub|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.GitHub|Any CPU.Build.0 = GitHub|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E2EB0A7-D310-42F6-A8BA-6988D674A9A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

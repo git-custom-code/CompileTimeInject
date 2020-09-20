@@ -1,5 +1,6 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
+    using Annotations;
     using CodeGeneration;
     using Metadata;
     using Microsoft.CodeAnalysis;

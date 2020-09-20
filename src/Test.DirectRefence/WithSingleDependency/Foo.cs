@@ -1,6 +1,6 @@
 namespace Test.DirectReference.WithSingleDependency
 {
-    using CustomCode.CompileTimeInject;
+    using CustomCode.CompileTimeInject.Annotations;
 
     [Export]
     public class Foo : IFoo

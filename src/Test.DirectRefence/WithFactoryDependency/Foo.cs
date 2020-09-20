@@ -1,6 +1,6 @@
 namespace Test.DirectReference.WithFactoryDependency
 {
-    using CustomCode.CompileTimeInject;
+    using CustomCode.CompileTimeInject.Annotations;
     using System;
 
     [Export]

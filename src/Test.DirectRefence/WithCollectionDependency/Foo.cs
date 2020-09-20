@@ -1,6 +1,6 @@
 namespace Test.DirectReference.WithCollectionDependency
 {
-    using CustomCode.CompileTimeInject;
+    using CustomCode.CompileTimeInject.Annotations;
     using System.Collections.Generic;
 
     [Export]

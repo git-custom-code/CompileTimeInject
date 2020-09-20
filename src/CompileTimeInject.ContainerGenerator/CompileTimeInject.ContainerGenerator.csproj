@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CompileTimeInject\CompileTimeInject.csproj" />
+    <ProjectReference Include="..\CompileTimeInject.Annotations\CompileTimeInject.Annotations.csproj" />
   </ItemGroup>
 
 </Project>

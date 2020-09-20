@@ -1,4 +1,4 @@
-namespace CustomCode.CompileTimeInject
+namespace CustomCode.CompileTimeInject.Annotations
 {
     /// <summary>
     /// Used in combination with an <see cref="ExportAttribute"/> to define the lifetime policy of a service.

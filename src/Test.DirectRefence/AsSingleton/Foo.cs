@@ -1,6 +1,6 @@
 namespace Test.DirectReference.AsSingleton
 {
-    using CustomCode.CompileTimeInject;
+    using CustomCode.CompileTimeInject.Annotations;
     using System;
 
     [Export(Lifetime.Singleton)]

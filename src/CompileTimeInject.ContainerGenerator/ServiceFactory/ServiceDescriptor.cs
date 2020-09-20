@@ -1,5 +1,6 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator
 {
+    using Annotations;
     using System.Collections.Generic;
     using System.Linq;
 

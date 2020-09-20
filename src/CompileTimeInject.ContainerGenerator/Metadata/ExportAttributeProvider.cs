@@ -1,5 +1,6 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
 {
+    using Annotations;
     using System;
     using System.Reflection.Metadata;
 

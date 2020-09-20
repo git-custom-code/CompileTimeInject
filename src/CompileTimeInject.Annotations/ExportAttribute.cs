@@ -1,4 +1,4 @@
-namespace CustomCode.CompileTimeInject
+namespace CustomCode.CompileTimeInject.Annotations
 {
     using System;
 
