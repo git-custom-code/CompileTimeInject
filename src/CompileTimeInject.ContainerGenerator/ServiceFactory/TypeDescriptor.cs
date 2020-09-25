@@ -49,7 +49,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     return FullName.AsSpan();
                 }
 
-                return FullName.AsSpan().Slice(namespaceLength);
+                return FullName.AsSpan().Slice(namespaceLength + 1);
             }
         }
 
@@ -66,7 +66,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     return new ReadOnlySpan<char>();
                 }
 
-                return FullName.AsSpan().Slice(0, namespaceLength - 1);
+                return FullName.AsSpan().Slice(0, namespaceLength);
             }
         }
 
