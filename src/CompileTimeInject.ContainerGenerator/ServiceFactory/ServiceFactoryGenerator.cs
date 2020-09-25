@@ -4,13 +4,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using CodeGeneration;
     using Metadata;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.Text;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection.Metadata;
     using System.Text;
-    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the ServiceFactory type.
@@ -60,7 +60,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <inheritdoc />
         public void Initialize(GeneratorInitializationContext context)
         {
-            // No initialization required for this generator
+            context.RegisterForSyntaxNotifications(() => new ServiceCandidateDetector());
         }
 
         /// <inheritdoc />
@@ -69,6 +69,77 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             try
             {
                 var detectedServices = new List<ServiceDescriptor>();
+
+                // detect exported services in the current compilation
+                if (context.SyntaxReceiver is ServiceCandidateDetector detector)
+                {
+                    foreach (var serviceClass in detector.ServiceCandidates)
+                    {
+                        var semanticModel = context.Compilation.GetSemanticModel(serviceClass.SyntaxTree);
+                        var classSymbol = semanticModel.GetDeclaredSymbol(serviceClass);
+                        if (classSymbol == null)
+                        {
+                            continue;
+                        }
+
+                        foreach (var attribute in classSymbol.GetAttributes())
+                        {
+                            if (typeof(ExportAttribute).FullName.Equals(attribute.AttributeClass?.ToString(), StringComparison.Ordinal))
+                            {
+                                var constructorArguments = attribute.ConstructorArguments;
+
+                                var lifetime = Lifetime.Transient;
+                                TypeDescriptor? contractFilter = null;
+                                foreach (var argument in constructorArguments)
+                                {
+                                    if (argument.Kind == TypedConstantKind.Type && argument.Value != null)
+                                    {
+                                        contractFilter = new TypeDescriptor(argument.Value.ToString());
+                                    }
+                                    else if (argument.Kind == TypedConstantKind.Enum && argument.Value is byte enumValue)
+                                    {
+                                        lifetime = (Lifetime)enumValue;
+                                    }
+                                }
+                                var implementation = new TypeDescriptor(classSymbol.ToString());
+                                var ctor = classSymbol.InstanceConstructors.Single();
+                                var dependencies = ctor.Parameters.Select(p => new TypeDescriptor(p.Type.ToString())).ToList();
+                                if (contractFilter.HasValue)
+                                {
+                                    detectedServices.Add(new ServiceDescriptor(
+                                        contractFilter.Value,
+                                        implementation,
+                                        dependencies,
+                                        lifetime));
+                                }
+                                else
+                                {
+                                    var interfaces = classSymbol.Interfaces.Select(i => new TypeDescriptor(i.ToString())).ToList();
+                                    if (interfaces.Any())
+                                    {
+                                        foreach (var contract in interfaces)
+                                        {
+                                            detectedServices.Add(new ServiceDescriptor(
+                                                contract,
+                                                implementation,
+                                                dependencies,
+                                                lifetime));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        detectedServices.Add(new ServiceDescriptor(
+                                           implementation,
+                                           dependencies,
+                                           lifetime));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // detect eported services in referenced assemblies
                 foreach (var reference in context.Compilation.References.OfType<PortableExecutableReference>())
                 {
                     var reader = reference.GetMetadataReader();
@@ -80,16 +151,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     foreach (var service in reader.GetExportedServices())
                     {
                         var lifetime = Lifetime.Transient;
-                        TypeDescriptor? contractFilter = null; 
-                        foreach(var value in service.ExportAttribute.FixedArguments)
+                        TypeDescriptor? contractFilter = null;
+                        foreach (var value in service.ExportAttribute.FixedArguments)
                         {
                             if (value.Type.FullName == typeof(Lifetime).FullName)
                             {
-                                lifetime = (Lifetime)value.Value;
+                                lifetime = (Lifetime)(value.Value ?? Lifetime.Transient);
                             }
                             else if (value.Type.FullName == typeof(Type).FullName)
                             {
-                                contractFilter = (TypeDescriptor)value.Value;
+                                contractFilter = (TypeDescriptor?)value.Value;
                             }
                         }
 
