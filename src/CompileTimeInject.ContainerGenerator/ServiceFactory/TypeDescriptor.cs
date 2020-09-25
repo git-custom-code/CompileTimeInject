@@ -3,7 +3,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using System;
 
     /// <summary>
-    /// A data object that contains the namespace and name of a type.
+    /// A data object that contains the fullname (i.e. namespace and name) of a type.
     /// </summary>
     public readonly struct TypeDescriptor
     {
