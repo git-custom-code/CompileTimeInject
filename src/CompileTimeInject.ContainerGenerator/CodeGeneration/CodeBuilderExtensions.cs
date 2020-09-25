@@ -1,6 +1,7 @@
 namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
 {
     using Annotations;
+    using Metadata;
     using System;
     using System.Collections.Generic;
     using System.Linq;

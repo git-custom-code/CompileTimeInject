@@ -1,4 +1,4 @@
-namespace CustomCode.CompileTimeInject.ContainerGenerator
+namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
 {
     using System;
 
