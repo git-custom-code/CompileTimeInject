@@ -17,16 +17,25 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         #region Data
 
         /// <summary>
+        /// The name of the CustomCode.CompileTimeInject.Annotations.ExportAttribute.
+        /// </summary>
+        private const string ExportAttributeName = "Export";
+
+        #region ServiceCandidates
+
+        /// <summary>
         /// Gets a collection of potential candidates for exported service classes.
         /// </summary>
-        public IEnumerable<ClassDeclarationSyntax> ServiceCandidates
+        public IEnumerable<TypeDeclarationSyntax> ServiceCandidates
         {
             get { return _serviceCandidates; }
         }
 
         /// <summary> Backing field for the <see cref="ServiceCandidates"/> property. </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly List<ClassDeclarationSyntax> _serviceCandidates = new List<ClassDeclarationSyntax>();
+        private readonly List<TypeDeclarationSyntax> _serviceCandidates = new List<TypeDeclarationSyntax>();
+
+        #endregion
 
         #endregion
 
@@ -39,9 +48,20 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             {
                 foreach(var attribute in classSyntax.AttributeLists.SelectMany(list => list.Attributes))
                 {
-                    if (attribute.Name.ToString().StartsWith("Export", StringComparison.OrdinalIgnoreCase))
+                    if (attribute.Name.ToString().StartsWith(ExportAttributeName, StringComparison.OrdinalIgnoreCase))
                     {
                         _serviceCandidates.Add(classSyntax);
+                        return;
+                    }
+                }
+            }
+            else if (syntaxNode is StructDeclarationSyntax typeSyntax)
+            {
+                foreach (var attribute in typeSyntax.AttributeLists.SelectMany(list => list.Attributes))
+                {
+                    if (attribute.Name.ToString().StartsWith(ExportAttributeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _serviceCandidates.Add(typeSyntax);
                         return;
                     }
                 }
