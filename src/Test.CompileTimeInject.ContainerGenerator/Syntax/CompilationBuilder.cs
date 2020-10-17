@@ -35,7 +35,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Syntax
         {
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
             var netStandard = MetadataReference.CreateFromFile(Assembly.Load("netstandard, Version=2.0.0.0").Location);
+#if NETCOREAPP3_1
+            var systemRuntime = MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=4.2.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location);
+#else
             var systemRuntime = MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a").Location);
+#endif
             var annotations = MetadataReference.CreateFromFile(typeof(ExportAttribute).Assembly.Location);
 
             var syntaxTrees = new List<SyntaxTree>();
@@ -58,6 +62,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Syntax
             return assembly;
         }
 
-        #endregion
+#endregion
     }
 }
