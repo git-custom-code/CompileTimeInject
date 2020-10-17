@@ -2,6 +2,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Extensions
 {
     using Microsoft.CodeAnalysis;
     using Syntax;
+    using System;
     using System.Linq;
 
     /// <summary>
@@ -54,6 +55,39 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Extensions
                     name, interfaceName, System.StringComparison.OrdinalIgnoreCase)))
                 {
                     return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Query if the extended <paramref name="compilation"/> contains a type (with the given
+        /// <paramref name="typeName"/>) that contains the given <paramref name="methodImplementation"/>.
+        /// </summary>
+        /// <param name="compilation"> The extended <see cref="Compilation"/>. </param>
+        /// <param name="typeName"> The name of the type to be found. </param>
+        /// <param name="methodImplementation"> The method implementation to be found. </param>
+        /// <returns>
+        /// True if a type with the given <paramref name="typeName"/> and <paramref name="methodImplementation"/>
+        /// was found, false otherwise.
+        /// </returns>
+        public static bool ContainsTypeWithMethodImplementation(
+            this Compilation compilation, string typeName, string methodImplementation)
+        {
+            var code = string.Join(
+                Environment.NewLine,
+                methodImplementation.Split(Environment.NewLine).Select(s => s.Trim()));
+
+            var typeMethodWalker = new TypeMethodWalker();
+            foreach (var tree in compilation.SyntaxTrees)
+            {
+                typeMethodWalker.Visit(tree.GetRoot());
+                if (typeMethodWalker.FoundMethodsByType.TryGetValue(typeName, out var methodImplementations))
+                {
+                    if (methodImplementations.Any(m => m.Equals(code, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
