@@ -8,10 +8,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
     /// <summary>
     /// Automated tests for the <see cref="ServiceFactoryGenerator"/> type.
     /// </summary>
-    public sealed class ServiceFactoryGeneratorTests
+    public sealed partial class ServiceFactoryGeneratorTests
     {
-        [Fact]
-        public void GenerateIServiceFactoryInterface()
+        [Fact(DisplayName = "Generate ServiceFactory")]
+        public void GenerateServiceFactoryClass()
         {
             // Given
             var input = CompilationBuilder.CreateEmptyAssembly();
