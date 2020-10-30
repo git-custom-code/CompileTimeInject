@@ -25,12 +25,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///     using System.Collections.Generic;
     ///
     ///     public sealed partial class ServiceFactory
-    ///         : IServiceFactory<IFoo1>
+    ///         : IServiceFactory
+    ///         , IServiceFactory<IFoo1>
     ///         , IServiceFactory<IFoo2>
     ///         ...
     ///         , IServiceFactory<IFooN>
     ///     {
-    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; } = new ConcurrentDictionary<Type, object>();
+    ///         public ServiceFactory(ConcurrentDictionary<Type, object>? singletonInstances = null)
+    ///         {
+    ///             SingletonInstances = singletonInstances ?? new ConcurrentDictionary<Type, object>();
+    ///         }
+    /// 
+    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
     /// 
     ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
     ///         {
@@ -46,7 +52,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///
     ///         IFooN IServiceFactory<IFooN>.CreateOrGetService()
     ///         {
-    ///             return new FooN(dep0);
+    ///             var dep0 = ((IServiceFactory<IFoo1>)this).CreateOrGetService();
+    ///             ...
+    ///             var depX = ((IServiceFactory<IFooX>)this).CreateOrGetService();
+    ///             return new FooN(dep0, ..., depX);
     ///         }
     ///     }
     /// }
@@ -57,13 +66,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     {
         #region Logic
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISourceGenerator" />
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new ServiceCandidateDetector());
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISourceGenerator" />
         public void Execute(GeneratorExecutionContext context)
         {
             try
@@ -195,7 +204,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             {
                 var diagnostic = Diagnostic.Create(
                     new DiagnosticDescriptor(
-                        id: "CTI002",
+                        id: "CTI003",
                         title: "Can't generate the ServiceFactory type",
                         messageFormat: $"{nameof(ServiceFactoryGenerator)}: {{0}}",
                         category: "CompileTimeInject.ContainerGenerator",
@@ -216,7 +225,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         private string CreateServiceFactory(IEnumerable<ServiceDescriptor> services)
         {
             var _ = string.Empty;
-            var separator = new InterfaceSeparator();
 
             var serviceGroups = services
                 .GroupBy(service => service.Contract)
@@ -243,20 +251,31 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     "using System.Collections.Generic;",
                     _,
                     "/// <summary>",
-                    "/// Default implementation for each <see cref=\"IServiceFactory{T}\"/> interface.",
+                    "/// Default implementation for the <see cref=\"IServiceFactory\"/> marker interface",
+                    "/// and each <see cref=\"IServiceFactory{T}\"/> interface.",
                     "/// </summary>",
                     "public sealed partial class ServiceFactory")
+                .Indent(": IServiceFactory")
                 .ForEach(contractImplementation, service =>
-                       $"{separator} IServiceFactory<{service.Contract.FullName}>")
+                       $", IServiceFactory<{service.Contract.FullName}>")
                 .ForEach(sharedContractImplementation, sharedContract =>
-                       $"{separator} IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>")
+                       $", IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>")
                     .BeginScope(
+                        "#region Dependencies",
+                        _,
+                        "public ServiceFactory(ConcurrentDictionary<Type, object>? singletonInstances = null)")
+                        .BeginScope(
+                            "SingletonInstances = singletonInstances ?? new ConcurrentDictionary<Type, object>();")
+                        .EndScope(
+                        _,
+                        "#endregion",
+                        _,
                         "#region Data",
                         _,
                         "/// <summary>",
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; } = new ConcurrentDictionary<Type, object>();",
+                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
                         _,
                         "#endregion",
                         _,
