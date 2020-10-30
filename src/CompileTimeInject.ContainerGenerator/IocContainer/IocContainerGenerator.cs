@@ -14,12 +14,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// <![CDATA[
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
+    ///     using System;
+    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///     using System.Ling;
     ///
     ///     public sealed class IocContainer
     ///     {
-    ///         private ServiceFactory Factory { get; } = new ServiceFactory();
+    ///         public IocContainer()
+    ///         {
+    ///             SingletonInstances = new ConcurrentDictionary<Type, object>();
+    ///             Factory = new ServiceFactory(SingletonInstances);
+    ///         }
+    /// 
+    ///         private ServiceFactory Factory { get; }
+    ///
+    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
     ///
     ///         public T? GetService<T>() where T : class
     ///         {
@@ -70,7 +80,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             {
                 var diagnostic = Diagnostic.Create(
                     new DiagnosticDescriptor(
-                        id: "CTI003",
+                        id: "CTI004",
                         title: "Can't generate the IocContainer type",
                         messageFormat: $"{nameof(IocContainerGenerator)}: {{0}}",
                         category: "CompileTimeInject.ContainerGenerator",
@@ -94,6 +104,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             var code = new CodeBuilder(
                 "namespace CustomCode.CompileTimeInject.GeneratedCode")
                 .BeginScope(
+                    "using System;",
+                    "using System.Collections.Concurrent;",
                     "using System.Collections.Generic;",
                     "using System.Linq;",
                     _,
@@ -104,10 +116,25 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     .BeginScope(
                         "#region Dependencies",
                         _,
+                        "public IocContainer()")
+                        .BeginScope(
+                            "SingletonInstances = new ConcurrentDictionary<Type, object>();",
+                            "Factory = new ServiceFactory(SingletonInstances);")
+                        .EndScope(
+                        _,
                         "/// <summary>",
                         "/// Gets the generated factory that is used to create service instances.",
                         "/// </summary>",
-                        "private ServiceFactory Factory { get; } = new ServiceFactory();",
+                        "private ServiceFactory Factory { get; }",
+                        _,
+                        "#endregion",
+                        _,
+                        "#region Data",
+                        _,
+                        "/// <summary>",
+                        "/// Gets a cache for created singleton service instances.",
+                        "/// </summary>",
+                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
                         _,
                         "#endregion",
                         _,
