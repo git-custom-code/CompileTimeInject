@@ -31,7 +31,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// <summary>
         /// The current indent (that depends on the number of currently open code scopes) for a new line of code.
         /// </summary>
-        private string Indent { get; set; } = string.Empty;
+        private string CurrentIndent { get; set; } = string.Empty;
 
         /// <summary>
         /// The number of currently open code scopes (that define the indent for a new line of code).
@@ -55,10 +55,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// <returns> The current builder's instance in order to enable fluent style api syntax. </returns>
         public CodeBuilder BeginScope(params string[] linesOfCode)
         {
-            SourceCode.AppendLine($"{Indent}{{");
+            SourceCode.AppendLine($"{CurrentIndent}{{");
 
             OpenScopeCount++;
-            Indent = new string(' ', (int)(OpenScopeCount * 4));
+            CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
 
             AppendLines(linesOfCode);
             return this;
@@ -73,13 +73,25 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         public CodeBuilder BeginInlineLambdaScope(params string[] linesOfCode)
         {
             OpenScopeCount++;
-            Indent = new string(' ', (int)(OpenScopeCount * 4));
+            CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
 
-            SourceCode.AppendLine($"{Indent}{{");
+            SourceCode.AppendLine($"{CurrentIndent}{{");
 
             OpenScopeCount++;
-            Indent = new string(' ', (int)(OpenScopeCount * 4));
+            CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
 
+            AppendLines(linesOfCode);
+            return this;
+        }
+
+        /// <summary>
+        /// Often used in combination with <see cref="ForEach{T}(IEnumerable{T}, Action{T, CodeBuilder})"/>
+        /// this method allows to continue generation code for the nested <see cref="CodeBuilder"/>.
+        /// </summary>
+        /// <param name="linesOfCode"> The line(s) of source code to be added to the builder. </param>
+        /// <returns> The current builder's instance in order to enable fluent style api syntax. </returns>
+        public CodeBuilder ContinueWith(params string[] linesOfCode)
+        {
             AppendLines(linesOfCode);
             return this;
         }
@@ -95,15 +107,15 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
             if (OpenScopeCount == 1)
             {
                 OpenScopeCount = 0;
-                Indent = string.Empty;
+                CurrentIndent = string.Empty;
             }
             else if (OpenScopeCount > 1)
             {
                 OpenScopeCount--;
-                Indent = new string(' ', (int)(OpenScopeCount * 4));
+                CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
             }
 
-            SourceCode.AppendLine($"{Indent}}}");
+            SourceCode.AppendLine($"{CurrentIndent}}}");
             AppendLines(linesOfCode);
             return this;
         }
@@ -118,32 +130,32 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
             if (OpenScopeCount == 1)
             {
                 OpenScopeCount = 0;
-                Indent = string.Empty;
+                CurrentIndent = string.Empty;
             }
             else if (OpenScopeCount > 1)
             {
                 OpenScopeCount--;
-                Indent = new string(' ', (int)(OpenScopeCount * 4));
+                CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
             }
 
             if (string.IsNullOrEmpty(additionalClosure))
             {
-                SourceCode.AppendLine($"{Indent}}}");
+                SourceCode.AppendLine($"{CurrentIndent}}}");
             }
             else
             {
-                SourceCode.AppendLine($"{Indent}}}{additionalClosure}");
+                SourceCode.AppendLine($"{CurrentIndent}}}{additionalClosure}");
             }
 
             if (OpenScopeCount == 1)
             {
                 OpenScopeCount = 0;
-                Indent = string.Empty;
+                CurrentIndent = string.Empty;
             }
             else if (OpenScopeCount > 1)
             {
                 OpenScopeCount--;
-                Indent = new string(' ', (int)(OpenScopeCount * 4));
+                CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
             }
 
             return this;
@@ -165,7 +177,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
             foreach (var item in collection)
             {
                 var lineOfCode = formatLineOfCode(item);
-                SourceCode.AppendLine($"{Indent}{lineOfCode}");
+                SourceCode.AppendLine($"{CurrentIndent}{lineOfCode}");
             }
             return this;
         }
@@ -188,7 +200,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
             {
                 ++index;
                 var lineOfCode = formatLineOfCode(item, index);
-                SourceCode.AppendLine($"{Indent}{lineOfCode}");
+                SourceCode.AppendLine($"{CurrentIndent}{lineOfCode}");
             }
             return this;
         }
@@ -236,14 +248,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         }
 
         /// <summary>
-        /// Often used in combination with <see cref="ForEach{T}(IEnumerable{T}, Action{T, CodeBuilder})"/>
-        /// this method allows to continue generation code for the nested <see cref="CodeBuilder"/>.
+        /// Appends the specified lines of code to the internal <see cref="StringBuilder"/> using
+        /// an additional indentation.
         /// </summary>
         /// <param name="linesOfCode"> The line(s) of source code to be added to the builder. </param>
         /// <returns> The current builder's instance in order to enable fluent style api syntax. </returns>
-        public CodeBuilder ContinueWith(params string[] linesOfCode)
+        public CodeBuilder Indent(params string[] linesOfCode)
         {
+            CurrentIndent = new string(' ', (int)((OpenScopeCount + 1) * 4));
             AppendLines(linesOfCode);
+            CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
             return this;
         }
 
@@ -255,7 +269,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
 
         /// <summary>
         /// Appends the specified lines of code to the internal <see cref="StringBuilder"/> using
-        /// the current <see cref="Indent"/>.
+        /// the <see cref="CurrentIndent"/>.
         /// </summary>
         /// <param name="linesOfCode">
         /// The lines of code to be added to the internal <see cref="StringBuilder"/>.
@@ -270,7 +284,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
                 }
                 else
                 {
-                    SourceCode.AppendLine($"{Indent}{lineOfCode}");
+                    SourceCode.AppendLine($"{CurrentIndent}{lineOfCode}");
                 }
             }
         }
