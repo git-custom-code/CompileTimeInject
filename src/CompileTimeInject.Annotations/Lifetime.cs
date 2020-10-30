@@ -8,6 +8,8 @@ namespace CustomCode.CompileTimeInject.Annotations
         /// <summary> A new service instance is created per request. </summary>
         Transient = 0,
         /// <summary> A new service instance is created once per container. </summary>
-        Singleton = 1
+        Singleton = 1,
+        /// <summary> A new service instance is created once per scope. </summary>
+        Scoped = 2
     }
 }
