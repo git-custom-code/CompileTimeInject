@@ -7,13 +7,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using System.Text;
 
     /// <summary>
-    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the "IServiceFactory{T}" interface.
+    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate both the
+    /// "IServiceFactory" and the generic "IServiceFactory{T}" interface.
     /// </summary>
     /// <example>
     /// This SourceGenerator will generate the following code:
     /// <![CDATA[
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
+    ///     public interface IServiceFactory
+    ///     {
+    ///     }
+    ///
     ///     public interface IServiceFactory<T> where T : class
     ///     {
     ///         T CreateOrGetService();
@@ -26,13 +31,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     {
         #region Logic
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISourceGenerator" />
         public void Initialize(GeneratorInitializationContext context)
         {
             // No initialization required for this generator
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISourceGenerator" />
         public void Execute(GeneratorExecutionContext context)
         {
             try
@@ -45,6 +50,27 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 var diagnostic = Diagnostic.Create(
                     new DiagnosticDescriptor(
                         id: "CTI001",
+                        title: "Can't generate the IServiceFactory interface",
+                        messageFormat: $"{nameof(IServiceFactoryGenerator)}: {{0}}",
+                        category: "CompileTimeInject.ContainerGenerator",
+                        defaultSeverity: DiagnosticSeverity.Error,
+                        isEnabledByDefault: true,
+                        description: "There was an unexpected exception generating the IServiceFactory interface"),
+                    Location.None,
+                    e);
+                context.ReportDiagnostic(diagnostic);
+            }
+
+            try
+            {
+                var code = CreateGenericServiceFactoryInterface();
+                context.AddSource("IServiceFactory.Generic", SourceText.From(code, Encoding.UTF8));
+            }
+            catch (Exception e)
+            {
+                var diagnostic = Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        id: "CTI002",
                         title: "Can't generate the IServiceFactory<T> interface",
                         messageFormat: $"{nameof(IServiceFactoryGenerator)}: {{0}}",
                         category: "CompileTimeInject.ContainerGenerator",
@@ -58,10 +84,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         }
 
         /// <summary>
-        /// Create the in-memory source code for the "IServiceFactory{T}" interface.
+        /// Create the in-memory source code for the "IServiceFactory" interface.
         /// </summary>
         /// <returns> The created in-memory source code. </returns>
         private string CreateServiceFactoryInterface()
+        {
+            var code = new CodeBuilder(
+                "namespace CustomCode.CompileTimeInject.GeneratedCode")
+                .BeginScope(
+                    "/// <summary>",
+                    "/// Marker interface for a factory that is able to create service instances.",
+                    "/// </summary>",
+                    "public interface IServiceFactory")
+                    .BeginScope()
+                    .EndScope()
+                .EndScope();
+            return code.ToString();
+        }
+
+        /// <summary>
+        /// Create the in-memory source code for the "IServiceFactory{T}" interface.
+        /// </summary>
+        /// <returns> The created in-memory source code. </returns>
+        private string CreateGenericServiceFactoryInterface()
         {
             var code = new CodeBuilder(
                 "namespace CustomCode.CompileTimeInject.GeneratedCode")
