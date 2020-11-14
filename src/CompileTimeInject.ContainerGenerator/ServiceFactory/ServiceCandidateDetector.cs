@@ -41,7 +41,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
         #region Logic
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISyntaxReceiver" />
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
             if (syntaxNode is ClassDeclarationSyntax classSyntax)

@@ -16,7 +16,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the ServiceFactory type.
     /// </summary>
     /// <example>
-    /// This SourceGenerator will generate the following code:
+    /// This SourceGenerator will generate either the following code:
     /// <![CDATA[
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
@@ -27,25 +27,19 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///     public sealed partial class ServiceFactory
     ///         : IServiceFactory
     ///         , IServiceFactory<IFoo1>
-    ///         , IServiceFactory<IFoo2>
     ///         ...
     ///         , IServiceFactory<IFooN>
     ///     {
-    ///         public ServiceFactory(ConcurrentDictionary<Type, object>? singletonInstances = null)
+    ///         public ServiceFactory(ConcurrentDictionary<Type, object> singletonInstances)
     ///         {
-    ///             SingletonInstances = singletonInstances ?? new ConcurrentDictionary<Type, object>();
+    ///             SingletonInstances = singletonInstances;
     ///         }
-    /// 
+    ///
     ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
-    /// 
+    ///
     ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
     ///         {
     ///             return new Foo1();
-    ///         }
-    ///         
-    ///         IFoo2 IServiceFactory<IFoo2>.CreateOrGetService()
-    ///         {
-    ///             return new Foo2();
     ///         }
     ///
     ///         ...
@@ -60,6 +54,52 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///     }
     /// }
     /// ]]>
+    ///
+    /// or the following code:
+    ///
+    /// /// <![CDATA[
+    /// namespace CustomCode.CompileTimeInject.GeneratedCode
+    /// {
+    ///     using System;
+    ///     using System.Collections.Concurrent;
+    ///     using System.Collections.Generic;
+    ///
+    ///     public sealed partial class ServiceFactory
+    ///         : IServiceFactory
+    ///         , IServiceFactory<IFoo1>
+    ///         ...
+    ///         , IServiceFactory<IFooN>
+    ///     {
+    ///         public ServiceFactory(
+    ///             ConcurrentDictionary<Type, object> scopedInstances,
+    ///             ConcurrentDictionary<Type, object> singletonInstances)
+    ///         {
+    ///             ScopedInstances = scopedInstances;
+    ///             SingletonInstances = singletonInstances;
+    ///         }
+    ///
+    ///         private ConcurrentDictionary<Type, object> ScopedInstances { get; }
+    ///
+    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
+    ///
+    ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
+    ///         {
+    ///             return new Foo1();
+    ///         }
+    ///
+    ///         ...
+    ///
+    ///         IFooN IServiceFactory<IFooN>.CreateOrGetService()
+    ///         {
+    ///             var dep0 = ((IServiceFactory<IFoo1>)this).CreateOrGetService();
+    ///             ...
+    ///             var depX = ((IServiceFactory<IFooX>)this).CreateOrGetService();
+    ///             return new FooN(dep0, ..., depX);
+    ///         }
+    ///     }
+    /// }
+    /// ]]>
+    /// 
     /// </example>
     [Generator]
     public sealed class ServiceFactoryGenerator : ISourceGenerator
@@ -230,16 +270,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 .GroupBy(service => service.Contract)
                 .ToList();
 
-            var contractImplementation = serviceGroups
+            var serviceContract = serviceGroups
                 .Where(group => group.Count() == 1)
                 .Select(group => group.First())
                 .ToList();
-            var transientContractImplementation = contractImplementation
+            var transientServiceContract = serviceContract
                 .Where(service => service.Lifetime == Lifetime.Transient);
-            var singletonContractImplementation = contractImplementation
+            var singletonServiceContract = serviceContract
                 .Where(service => service.Lifetime == Lifetime.Singleton);
+            var scopedServiceContract = serviceContract
+                .Where(service => service.Lifetime == Lifetime.Scoped);
 
-            var sharedContractImplementation = serviceGroups
+            var sharedServiceContract = serviceGroups
                 .Where(group => group.Count() > 1)
                 .ToList();
 
@@ -256,17 +298,34 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     "/// </summary>",
                     "public sealed partial class ServiceFactory")
                 .Indent(": IServiceFactory")
-                .ForEach(contractImplementation, service =>
-                       $", IServiceFactory<{service.Contract.FullName}>")
-                .ForEach(sharedContractImplementation, sharedContract =>
-                       $", IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>")
+                .Indent(code => code.ForEach(serviceContract, service =>
+                       $", IServiceFactory<{service.Contract.FullName}>"))
+                .Indent(code => code.ForEach(sharedServiceContract, sharedContract =>
+                       $", IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>"))
                     .BeginScope(
                         "#region Dependencies",
                         _,
-                        "public ServiceFactory(ConcurrentDictionary<Type, object>? singletonInstances = null)")
+                        "/// <summary>",
+                        "/// Creates a new instance of the <see cref=\"ServiceFactory\"/> type.",
+                        "/// </summary>")
+                    .If(scopedServiceContract.None(), code => code.ContinueWith(
+                        "/// <param name=\"singletonInstances\"> A cache for created singleton service instances. </param>",
+                        "public ServiceFactory(ConcurrentDictionary<Type, object> singletonInstances)")
                         .BeginScope(
-                            "SingletonInstances = singletonInstances ?? new ConcurrentDictionary<Type, object>();")
-                        .EndScope(
+                            "SingletonInstances = singletonInstances;")
+                        .EndScope())
+                    .If(scopedServiceContract.Any(), code => code.ContinueWith(
+                        "/// <param name=\"scopedInstances\"> A cache for created scroped service instances. </param>",
+                        "/// <param name=\"singletonInstances\"> A cache for created singleton service instances. </param>",
+                        "public ServiceFactory(")
+                        .Indent(
+                            "ConcurrentDictionary<Type, object> scopedInstances,",
+                            "ConcurrentDictionary<Type, object> singletonInstances)")
+                        .BeginScope(
+                            "ScopedInstances = scopedInstances;",
+                            "SingletonInstances = singletonInstances;")
+                        .EndScope())
+                    .ContinueWith(
                         _,
                         "#endregion",
                         _,
@@ -276,16 +335,23 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
                         "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
-                        _,
+                        _)
+                    .If(scopedServiceContract.Any(), code => code.ContinueWith(
+                        "/// <summary>",
+                        "/// Gets a cache for created singleton service instances.",
+                        "/// </summary>",
+                        "private ConcurrentDictionary<Type, object> ScopedInstances { get; }",
+                        _))
+                    .ContinueWith(
                         "#endregion",
                         _,
                         "#region Logic")
 
                     // contracts with a single implementation with Lifetime.Transient
 
-                    .ForEach(transientContractImplementation, (service, code) => code.ContinueWith(
+                    .ForEach(transientServiceContract, (service, code) => code.ContinueWith(
                         _,
-                        "/// <inheritdoc />",
+                       $"/// <inheritdoc cref=\"IServiceFactory{{{service.Contract.FullName}}}\" />",
                        $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
                         .BeginScope()
                         .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
@@ -296,11 +362,30 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             "return service;")
                         .EndScope())
 
+                    // contracts with a single implementation with Lifetime.Scoped
+
+                    .ForEach(scopedServiceContract, (service, code) => code.ContinueWith(
+                        _,
+                       $"/// <inheritdoc cref=\"IServiceFactory{{{service.Contract.FullName}}}\" />",
+                       $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
+                        .BeginScope(
+                           $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                            .BeginInlineLambdaScope()
+                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ContinueWith(
+                               $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                                "return service;")
+                            .EndInlineLambdaScope(");").ContinueWith(
+                            "return service;")
+                        .EndScope())
+
                     // contracts with a single implementation with Lifetime.Singleton
 
-                    .ForEach(singletonContractImplementation, (service, code) => code.ContinueWith(
+                    .ForEach(singletonServiceContract, (service, code) => code.ContinueWith(
                         _,
-                        "/// <inheritdoc />",
+                       $"/// <inheritdoc cref=\"IServiceFactory{{{service.Contract.FullName}}}\" />",
                        $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
                         .BeginScope(
                            $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
@@ -317,9 +402,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                     // contracts with multiple implementations ...
 
-                    .ForEach(sharedContractImplementation, (sharedContract, code) => code.ContinueWith(
+                    .ForEach(sharedServiceContract, (sharedContract, code) => code.ContinueWith(
                         _,
-                        "/// <inheritdoc />",
+                       $"/// <inheritdoc cref=\"IServiceFactory{{{sharedContract.Key.FullName}}}\" />",
                        $"IEnumerable<{sharedContract.Key.FullName}> IServiceFactory<IEnumerable<{sharedContract.Key.FullName}>>.CreateOrGetService()")
                         .BeginScope(
                            $"var services = new List<{sharedContract.Key.FullName}>();")
@@ -334,6 +419,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                $"services.Add(service);")
+                        .EndScope())
+
+                        // ... with Lifetime.Scoped
+
+                        .ForEach(sharedContract.SingletonServices(), (service, code) => code
+                        .BeginScope(
+                           $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                            .BeginInlineLambdaScope()
+                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
+                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
+                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ContinueWith(
+                               $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
+                                "return service;")
+                            .EndInlineLambdaScope(");").ContinueWith(
+                            "services.Add(service);")
                         .EndScope())
 
                         // ... with Lifetime.Singleton
