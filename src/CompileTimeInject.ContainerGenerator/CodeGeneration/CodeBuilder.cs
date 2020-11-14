@@ -261,7 +261,39 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
             return this;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Appends all the actions that are configured by the <paramref name="nestedBuilderAction"/> using
+        /// an additional indentation.
+        /// </summary>
+        /// <param name="nestedBuilderAction"> A delegate that allows execution of nested code generation. </param>
+        /// <returns> The current builder's instance in order to enable fluent style api syntax. </returns>
+        public CodeBuilder Indent(Action<CodeBuilder> nestedBuilderAction)
+        {
+            CurrentIndent = new string(' ', (int)((OpenScopeCount + 1) * 4));
+            nestedBuilderAction(this);
+            CurrentIndent = new string(' ', (int)(OpenScopeCount * 4));
+            return this;
+        }
+
+        /// <summary>
+        /// Appends all the actions that are configured by the <paramref name="nestedBuilderAction"/> only if
+        /// the given <paramref name="condition"/> is true.
+        /// </summary>
+        /// <param name="condition">
+        /// The condition that needs to be true, in order to execute the <paramref name="nestedBuilderAction"/>.
+        /// </param>
+        /// <param name="nestedBuilderAction"> A delegate that allows execution of nested code generation. </param>
+        /// <returns> The current builder's instance in order to enable fluent style api syntax. </returns>
+        public CodeBuilder If(bool condition, Action<CodeBuilder> nestedBuilderAction)
+        {
+            if (condition)
+            {
+                nestedBuilderAction(this);
+            }
+            return this;
+        }
+
+        /// <inheritdoc cref="object" />
         public override string ToString()
         {
             return SourceCode.ToString();
