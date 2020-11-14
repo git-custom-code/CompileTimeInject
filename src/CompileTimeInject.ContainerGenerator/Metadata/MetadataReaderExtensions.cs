@@ -89,6 +89,59 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         }
 
         /// <summary>
+        /// Query if any of the types that are annotated with an <see cref="ExportAttribute"/> is defined as
+        /// <see cref="Lifetime.Scoped"/>.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <returns> True if at least one type is annotated with <see cref="Lifetime.Scoped"/>, false otherwise. </returns>
+        public static bool DefinesServiceWithLifetimeScoped(this MetadataReader reader)
+        {
+            var targetAttributeType = typeof(ExportAttribute);
+            var targetName = targetAttributeType.Name;
+            var targetNamespace = targetAttributeType.Namespace;
+            var targetAssemblyName = targetAttributeType.Assembly.GetName().Name;
+
+            foreach (var attributeHandle in reader.CustomAttributes)
+            {
+                var attribute = reader.GetCustomAttribute(attributeHandle);
+
+                // check only attributes that annotate a type at class level
+                if (attribute.Parent.Kind == HandleKind.TypeDefinition &&
+                    attribute.Constructor.Kind == HandleKind.MemberReference)
+                {
+                    var memberRef = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                    var typeRef = reader.GetTypeReference((TypeReferenceHandle)memberRef.Parent);
+                    var assemblyRef = reader.GetAssemblyReference((AssemblyReferenceHandle)typeRef.ResolutionScope);
+
+                    var assemblyName = reader.GetString(assemblyRef.Name);
+                    var attributeName = reader.GetString(typeRef.Name);
+                    var attributeNamespace = reader.GetString(typeRef.Namespace);
+
+                    // check if the attribute is an ExportAttribute ...
+                    if (string.Equals(targetName, attributeName, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var exportAttribute = attribute.DecodeValue(new ExportAttributeProvider());
+                        foreach (var value in exportAttribute.FixedArguments)
+                        {
+                            if (value.Type.FullName == typeof(Lifetime).FullName)
+                            {
+                                var lifetime = (Lifetime)(value.Value ?? Lifetime.Transient);
+                                if (lifetime == Lifetime.Scoped)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Gets a collection of <see cref="TypeDescriptor"/>s for each implemented interface for the
         /// given <paramref name="type"/>.
         /// </summary>
