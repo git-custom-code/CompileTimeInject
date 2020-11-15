@@ -172,7 +172,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             "Id = id;",
                             "DisposeAction = disposeAction;",
                             "ScopedInstances = new ConcurrentDictionary<Type, object>();",
-                            "Factory = new ServiceFactory(singletonInstances, ScopedInstances);")
+                            "Factory = new ServiceFactory(ScopedInstances, singletonInstances);")
                         .EndScope(
                         _,
                         "/// <summary>",
