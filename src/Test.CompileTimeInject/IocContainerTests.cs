@@ -169,10 +169,10 @@ namespace CustomCode.CompileTimeInject.Tests
             // Then
             Assert.NotNull(fooCollection);
             Assert.Equal(2, fooCollection.Count());
-            foreach(var foo in fooCollection)
+            foreach (var foo in fooCollection)
             {
                 Assert.NotNull(foo);
-                foreach(var dependency in foo.Dependencies)
+                foreach (var dependency in foo.Dependencies)
                 {
                     Assert.NotNull(dependency);
                 }
@@ -191,6 +191,41 @@ namespace CustomCode.CompileTimeInject.Tests
             // Then
             Assert.NotNull(foo);
             Assert.NotNull(foo?.Dependency);
+        }
+
+        [Fact]
+        public void GetServiceByScope()
+        {
+            // Given
+            var container = new IocContainer();
+            directRef.AsScoped.IFoo? fooOuterScope = null;
+            directRef.AsScoped.IFoo? fooInnerScope = null;
+            directRef.AsScoped.IFoo? fooOuterScopeAfterDispose = null;
+
+            // When
+            var fooDefaultScope = container.GetService<directRef.AsScoped.IFoo>();
+            using (container.BeginScope())
+            {
+                fooOuterScope = container.GetService<directRef.AsScoped.IFoo>();
+                using (container.BeginScope())
+                {
+                    fooInnerScope = container.GetService<directRef.AsScoped.IFoo>();
+                }
+                fooOuterScopeAfterDispose = container.GetService<directRef.AsScoped.IFoo>();
+            }
+
+            // Then
+            Assert.NotNull(fooDefaultScope);
+            Assert.NotNull(fooOuterScope);
+            Assert.NotNull(fooOuterScopeAfterDispose);
+            Assert.NotNull(fooInnerScope);
+
+            Assert.NotEqual(fooDefaultScope?.Id, fooOuterScope?.Id);
+            Assert.NotEqual(fooDefaultScope?.Id, fooOuterScopeAfterDispose?.Id);
+            Assert.NotEqual(fooDefaultScope?.Id, fooInnerScope?.Id);
+
+            Assert.NotEqual(fooOuterScope?.Id, fooInnerScope?.Id);
+            Assert.Equal(fooOuterScope?.Id, fooOuterScopeAfterDispose?.Id);
         }
     }
 }
