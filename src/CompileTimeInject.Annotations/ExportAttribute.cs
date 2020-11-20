@@ -46,6 +46,17 @@ namespace CustomCode.CompileTimeInject.Annotations
     /// public sealed class Foo : IFoo, IBar
     /// { }
     /// ]]>
+    /// - If you have multiple services registered for the same contract, you can assign a unique
+    ///   service id in order to identify a sepcific implementation:
+    /// <![CDATA[
+    /// [Export(typeof(IFoo), ServiceId = "UniqueFooId")]
+    /// public sealed class FirstFoo : IFoo
+    /// { }
+    ///
+    /// [Export(typeof(IFoo))]
+    /// public sealed class SecondFoo : IFoo
+    /// { }
+    /// ]]>
     /// 
     /// </example>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
@@ -104,6 +115,11 @@ namespace CustomCode.CompileTimeInject.Annotations
         /// Gets the lifetime policy for created service instances.
         /// </summary>
         public Lifetime Lifetime { get; }
+
+        /// <summary>
+        /// Gets or sets an optional and unique identifier for the registered service.
+        /// </summary>
+        public string? ServiceId { get; set; }
 
         #endregion
     }
