@@ -19,11 +19,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <param name="implementation"> The described service's implementation type. </param>
         /// <param name="dependencies"> The service's (constructor) dependencies, that need to be injected. </param>
         /// <param name="lifetime"> The service's lifetime policy. </param>
+        /// <param name="serviceId"> An optional and unique identifier for the service. </param>
         public ServiceDescriptor(
             TypeDescriptor implementation,
             IEnumerable<TypeDescriptor>? dependencies = null,
-            Lifetime lifetime = Lifetime.Transient)
-            : this(implementation, implementation, dependencies, lifetime)
+            Lifetime lifetime = Lifetime.Transient,
+            string? serviceId = null)
+            : this(implementation, implementation, dependencies, lifetime, serviceId)
         { }
 
         /// <summary>
@@ -33,16 +35,19 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <param name="implementation"> The described service's implementation type. </param>
         /// <param name="dependencies"> The service's (constructor) dependencies, that need to be injected. </param>
         /// <param name="lifetime"> The service's lifetime policy. </param>
+        /// <param name="serviceId"> An optional and unique identifier for the service. </param>
         public ServiceDescriptor(
             TypeDescriptor contract,
             TypeDescriptor implementation,
             IEnumerable<TypeDescriptor>? dependencies = null,
-            Lifetime lifetime = Lifetime.Transient)
+            Lifetime lifetime = Lifetime.Transient,
+            string? serviceId = null)
         {
             Contract = contract;
             Dependencies = dependencies ?? Enumerable.Empty<TypeDescriptor>();
             Implementation = implementation;
             Lifetime = lifetime;
+            ServiceId = serviceId;
         }
 
         #endregion
@@ -69,6 +74,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// </summary>
         public Lifetime Lifetime { get; }
 
+        /// <summary>
+        /// Gets an optional and unique identifier for the service.
+        /// </summary>
+        public string? ServiceId { get; }
+
         #endregion
 
         #region Logic
@@ -82,7 +92,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         public static bool operator ==(ServiceDescriptor left, ServiceDescriptor right)
         {
             return string.Equals(left.Implementation.FullName, right.Implementation.FullName, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(left.Contract.FullName, right.Contract.FullName, StringComparison.OrdinalIgnoreCase);
+                string.Equals(left.Contract.FullName, right.Contract.FullName, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(left.ServiceId, right.ServiceId, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -94,7 +105,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         public static bool operator !=(ServiceDescriptor left, ServiceDescriptor right)
         {
             return !string.Equals(left.Implementation.FullName, right.Implementation.FullName, StringComparison.OrdinalIgnoreCase) ||
-                 !string.Equals(left.Contract.FullName, right.Contract.FullName, StringComparison.OrdinalIgnoreCase);
+                 !string.Equals(left.Contract.FullName, right.Contract.FullName, StringComparison.OrdinalIgnoreCase) ||
+                 !string.Equals(left.ServiceId, right.ServiceId, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc />
@@ -103,7 +115,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             if (obj is ServiceDescriptor service)
             {
                 return string.Equals(Implementation.FullName, service.Implementation.FullName, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(Contract.FullName, service.Contract.FullName, StringComparison.OrdinalIgnoreCase);
+                    string.Equals(Contract.FullName, service.Contract.FullName, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(ServiceId, service.ServiceId, StringComparison.OrdinalIgnoreCase);
             }
 
             return false;
@@ -112,12 +125,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            if (Contract == Implementation)
+            var hashCode = Contract.FullName.GetHashCode();
+            if (Contract != Implementation)
             {
-                return Implementation.FullName.GetHashCode();
+                hashCode = hashCode * 17 + Implementation.FullName.GetHashCode();
             }
-
-            return Contract.FullName.GetHashCode() * 17 + Implementation.FullName.GetHashCode();
+            if (ServiceId != null)
+            {
+                hashCode = hashCode * 17 + ServiceId.GetHashCode();
+            }
+            return hashCode;
         }
 
         /// <inheritdoc />
@@ -125,9 +142,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         {
             if (Contract == Implementation)
             {
-                return Implementation.FullName;
+                if (ServiceId == null)
+                {
+                    return Implementation.FullName;
+                }
+                return $"{Implementation.FullName} (Id: {ServiceId})";
             }
-            return $"{Implementation.FullName} : {Contract.FullName}";
+
+            if (ServiceId == null)
+            {
+                return $"{Implementation.FullName} : {Contract.FullName}";
+            }
+            return $"{Implementation.FullName} : {Contract.FullName} (Id: {ServiceId})";
         }
 
         #endregion
