@@ -8,7 +8,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
     /// <summary>
     /// Automated tests for the <see cref="IocContainerGenerator"/> type.
     /// </summary>
-    public sealed class IocContainerGeneratorTests
+    public sealed partial class IocContainerGeneratorTests
     {
         [Fact]
         public void GenerateIocContainerClass()
