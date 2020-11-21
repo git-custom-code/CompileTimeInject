@@ -118,71 +118,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 var detectedServices = new List<ServiceDescriptor>();
 
                 // detect exported services in the current compilation
-                if (context.SyntaxReceiver is ServiceCandidateDetector detector)
+                if (context.SyntaxReceiver is ServiceCandidateDetector currentCompilation)
                 {
-                    foreach (var serviceClass in detector.ServiceCandidates)
+                    var foundServices = context.Compilation.FindExportedServices(currentCompilation.ServiceCandidates);
+                    if (foundServices.Any())
                     {
-                        var semanticModel = context.Compilation.GetSemanticModel(serviceClass.SyntaxTree);
-                        var classSymbol = semanticModel.GetDeclaredSymbol(serviceClass);
-                        if (classSymbol == null)
-                        {
-                            continue;
-                        }
-
-                        foreach (var attribute in classSymbol.GetAttributes())
-                        {
-                            if (typeof(ExportAttribute).FullName.Equals(attribute.AttributeClass?.ToString(), StringComparison.Ordinal))
-                            {
-                                var constructorArguments = attribute.ConstructorArguments;
-
-                                var lifetime = Lifetime.Transient;
-                                TypeDescriptor? contractFilter = null;
-                                foreach (var argument in constructorArguments)
-                                {
-                                    if (argument.Kind == TypedConstantKind.Type && argument.Value != null)
-                                    {
-                                        contractFilter = new TypeDescriptor(argument.Value.ToString());
-                                    }
-                                    else if (argument.Kind == TypedConstantKind.Enum && argument.Value is byte enumValue)
-                                    {
-                                        lifetime = (Lifetime)enumValue;
-                                    }
-                                }
-                                var implementation = new TypeDescriptor(classSymbol.ToString());
-                                var ctor = classSymbol.InstanceConstructors.Single();
-                                var dependencies = ctor.Parameters.Select(p => new TypeDescriptor(p.Type.ToString())).ToList();
-                                if (contractFilter.HasValue)
-                                {
-                                    detectedServices.Add(new ServiceDescriptor(
-                                        contractFilter.Value,
-                                        implementation,
-                                        dependencies,
-                                        lifetime));
-                                }
-                                else
-                                {
-                                    var interfaces = classSymbol.Interfaces.Select(i => new TypeDescriptor(i.ToString())).ToList();
-                                    if (interfaces.Any())
-                                    {
-                                        foreach (var contract in interfaces)
-                                        {
-                                            detectedServices.Add(new ServiceDescriptor(
-                                                contract,
-                                                implementation,
-                                                dependencies,
-                                                lifetime));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        detectedServices.Add(new ServiceDescriptor(
-                                           implementation,
-                                           dependencies,
-                                           lifetime));
-                                    }
-                                }
-                            }
-                        }
+                        detectedServices.AddRange(foundServices);
                     }
                 }
 
