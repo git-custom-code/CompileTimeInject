@@ -57,6 +57,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         }
 
         /// <summary>
+        /// Gets all <see cref="Lifetime.Scoped"/> services that implement the <paramref name="sharedContract"/>.
+        /// </summary>
+        /// <param name="sharedContract"> The extended <see cref="IGrouping{TKey, TElement}"/>. </param>
+        /// <returns> All <see cref="Lifetime.Scoped"/> services that implement the <paramref name="sharedContract"/>. </returns>
+        public static IEnumerable<ServiceDescriptor> ScopedServices(this IGrouping<TypeDescriptor, ServiceDescriptor> sharedContract)
+        {
+            return sharedContract.Where(service => service.Lifetime == Lifetime.Scoped);
+        }
+
+        /// <summary>
         /// Gets all <see cref="Lifetime.Singleton"/> services that implement the <paramref name="sharedContract"/>.
         /// </summary>
         /// <param name="sharedContract"> The extended <see cref="IGrouping{TKey, TElement}"/>. </param>
