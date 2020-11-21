@@ -5,7 +5,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Text;
     using System;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
@@ -134,7 +133,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         }
 
         /// <summary>
-        /// Create the in-memory source code for the Scope type.
+        /// Create the in-memory source code for the "Scope" type.
         /// </summary>
         /// <param name="useNamedServices">
         /// True if the scope contains named services, false otherwise.
