@@ -23,8 +23,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                       public sealed class Foo
                       { }
                   }");
-            var sourceGenerator = new ScopeGenerator();
+            var sourceGenerator = new ServiceFactoryGenerator();
             var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
+
+            Assert.False(input.GetDiagnostics().HasErrors());
 
             // When
             testEnvironment.RunGeneratorsAndUpdateCompilation(
@@ -61,7 +63,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                       public sealed class Foo : IFoo
                       { }
                   }");
-            var sourceGenerator = new ScopeGenerator();
+            var sourceGenerator = new ServiceFactoryGenerator();
             var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
 
             // When
@@ -104,7 +106,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                       public sealed class Foo : IFoo, IBar
                       { }
                   }");
-            var sourceGenerator = new ScopeGenerator();
+            var sourceGenerator = new ServiceFactoryGenerator();
             var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
 
             // When
@@ -154,7 +156,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                       public sealed class Foo : IFoo
                       { }
                   }");
-            var sourceGenerator = new ScopeGenerator();
+            var sourceGenerator = new ServiceFactoryGenerator();
             var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
 
             // When
