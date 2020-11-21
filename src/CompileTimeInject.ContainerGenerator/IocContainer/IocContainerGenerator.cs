@@ -17,7 +17,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
     ///     using System;
-    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///     using System.Linq;
     ///
@@ -25,13 +24,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///     {
     ///         public IocContainer()
     ///         {
-    ///             SingletonInstances = new ConcurrentDictionary<Type, object>();
+    ///             SingletonInstances = new ServiceCache();
     ///             Factory = new ServiceFactory(SingletonInstances);
     ///         }
     ///
     ///         private IServiceFactory Factory { get; }
     ///
-    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
+    ///         private ServiceCache SingletonInstances { get; }
     ///
     ///         public T? GetService<T>() where T : class
     ///         {
@@ -63,7 +62,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
     ///     using System;
-    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///     using System.Threading;
     ///
@@ -71,7 +69,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///     {
     ///         public IocContainer()
     ///         {
-    ///             SingletonInstances = new ConcurrentDictionary<Type, object>();
+    ///             SingletonInstances = new ServiceCache();
     ///             DefaultScope = new Scope("DefaultScope", () => { }, SingletonInstances);
     ///             LifetimeScopes = new AsyncLocal<List<WeakReference<Scope>>>();
     ///             SyncLock = new object();
@@ -79,7 +77,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///
     ///         private Scope DefaultScope { get; }
     ///
-    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
+    ///         private ServiceCache SingletonInstances { get; }
     ///
     ///         private AsyncLocal<List<WeakReference<Scope>>> LifetimeScopes { get; }
     ///
@@ -158,48 +156,26 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         {
             try
             {
-                var useLifetimeScoped = false;
-
-                // detect scoped services in the current compilation
-                if (context.SyntaxReceiver is IocContainerSyntaxReceiver detector)
+                var useScopedServices = false;
+                if (context.SyntaxReceiver is IocContainerSyntaxReceiver currrentCompilation)
                 {
-                    useLifetimeScoped = detector.UseLifetimeScoped;
-                    if (!useLifetimeScoped)
+                    useScopedServices = currrentCompilation.UseLifetimeScoped;
+                    if (!useScopedServices)
                     {
-                        // detect scoped services in referenced assemblies
-                        foreach (var reference in context.Compilation.References.OfType<PortableExecutableReference>())
-                        {
-                            var reader = reference.GetMetadataReader();
-                            if (reader == null)
-                            {
-                                continue;
-                            }
-
-                            useLifetimeScoped = reader.DefinesServiceWithLifetimeScoped();
-                            if (useLifetimeScoped)
-                            {
-                                break;
-                            }
-                        }
+                        useScopedServices = context.Compilation
+                            .GetReferencedNetAssemblies()
+                            .Any(compilation => compilation.DefinesServiceWithLifetimeScoped());
                     }
                 }
 
-                string code;
-                if (useLifetimeScoped)
-                {
-                    code = CreateScopedIocContainerType();
-                }
-                else
-                {
-                    code = CreateIocContainerType();
-                }
+                var code = useScopedServices ? CreateScopedIocContainerType() : CreateIocContainerType();
                 context.AddSource("IocContainer", SourceText.From(code, Encoding.UTF8));
             }
             catch (Exception e)
             {
                 var diagnostic = Diagnostic.Create(
                     new DiagnosticDescriptor(
-                        id: "CTI004",
+                        id: "CTI005",
                         title: "Can't generate the IocContainer type",
                         messageFormat: $"{nameof(IocContainerGenerator)}: {{0}}",
                         category: "CompileTimeInject.ContainerGenerator",
@@ -224,7 +200,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 "namespace CustomCode.CompileTimeInject.GeneratedCode")
                 .BeginScope(
                     "using System;",
-                    "using System.Collections.Concurrent;",
                     "using System.Collections.Generic;",
                     "using System.Linq;",
                     _,
@@ -240,7 +215,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// </summary>",
                         "public IocContainer()")
                         .BeginScope(
-                            "SingletonInstances = new ConcurrentDictionary<Type, object>();",
+                            "SingletonInstances = new ServiceCache();",
                             "Factory = new ServiceFactory(SingletonInstances);")
                         .EndScope(
                         _,
@@ -256,7 +231,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <summary>",
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
+                        "private ServiceCache SingletonInstances { get; }",
                         _,
                         "#endregion",
                         _,
@@ -312,7 +287,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 "namespace CustomCode.CompileTimeInject.GeneratedCode")
                 .BeginScope(
                     "using System;",
-                    "using System.Collections.Concurrent;",
                     "using System.Collections.Generic;",
                     "using System.Threading;",
                     _,
@@ -328,7 +302,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// </summary>",
                         "public IocContainer()")
                         .BeginScope(
-                            "SingletonInstances = new ConcurrentDictionary<Type, object>();",
+                            "SingletonInstances = new ServiceCache();",
                             "DefaultScope = new Scope(\"DefaultScope\", () => { }, SingletonInstances);",
                             "LifetimeScopes = new AsyncLocal<List<WeakReference<Scope>>>();",
                             "SyncLock = new object();")
@@ -346,7 +320,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <summary>",
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
+                        "private ServiceCache SingletonInstances { get; }",
                         _,
                         "/// <summary>",
                         "/// Gets a collection of weak references to created lifetime <see cref=\"Scope\"/> instances.",

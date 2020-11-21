@@ -13,7 +13,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using System.Text;
 
     /// <summary>
-    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the ServiceFactory type.
+    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the "ServiceFactory" type.
     /// </summary>
     /// <example>
     /// This SourceGenerator will generate either the following code:
@@ -21,7 +21,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
     ///     using System;
-    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///
     ///     public sealed partial class ServiceFactory
@@ -30,12 +29,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///         ...
     ///         , IServiceFactory<IFooN>
     ///     {
-    ///         public ServiceFactory(ConcurrentDictionary<Type, object> singletonInstances)
+    ///         public ServiceFactory(ServiceCache singletonInstances)
     ///         {
     ///             SingletonInstances = singletonInstances;
     ///         }
     ///
-    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
+    ///         private ServiceCache SingletonInstances { get; }
     ///
     ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
     ///         {
@@ -61,7 +60,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
     ///     using System;
-    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///
     ///     public sealed partial class ServiceFactory
@@ -71,16 +69,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///         , IServiceFactory<IFooN>
     ///     {
     ///         public ServiceFactory(
-    ///             ConcurrentDictionary<Type, object> scopedInstances,
-    ///             ConcurrentDictionary<Type, object> singletonInstances)
+    ///             ServiceCache scopedInstances,
+    ///             ServiceCache singletonInstances)
     ///         {
     ///             ScopedInstances = scopedInstances;
     ///             SingletonInstances = singletonInstances;
     ///         }
     ///
-    ///         private ConcurrentDictionary<Type, object> ScopedInstances { get; }
+    ///         private ServiceCache ScopedInstances { get; }
     ///
-    ///         private ConcurrentDictionary<Type, object> SingletonInstances { get; }
+    ///         private ServiceCache SingletonInstances { get; }
     ///
     ///         IFoo1 IServiceFactory<IFoo1>.CreateOrGetService()
     ///         {
@@ -310,7 +308,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// </summary>")
                     .If(scopedServiceContract.None(), code => code.ContinueWith(
                         "/// <param name=\"singletonInstances\"> A cache for created singleton service instances. </param>",
-                        "public ServiceFactory(ConcurrentDictionary<Type, object> singletonInstances)")
+                        "public ServiceFactory(ServiceCache singletonInstances)")
                         .BeginScope(
                             "SingletonInstances = singletonInstances;")
                         .EndScope())
@@ -319,8 +317,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <param name=\"singletonInstances\"> A cache for created singleton service instances. </param>",
                         "public ServiceFactory(")
                         .Indent(
-                            "ConcurrentDictionary<Type, object> scopedInstances,",
-                            "ConcurrentDictionary<Type, object> singletonInstances)")
+                            "ServiceCache scopedInstances,",
+                            "ServiceCache singletonInstances)")
                         .BeginScope(
                             "ScopedInstances = scopedInstances;",
                             "SingletonInstances = singletonInstances;")
@@ -334,13 +332,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <summary>",
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> SingletonInstances { get; }",
+                        "private ServiceCache SingletonInstances { get; }",
                         _)
                     .If(scopedServiceContract.Any(), code => code.ContinueWith(
                         "/// <summary>",
                         "/// Gets a cache for created singleton service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> ScopedInstances { get; }",
+                        "private ServiceCache ScopedInstances { get; }",
                         _))
                     .ContinueWith(
                         "#endregion",

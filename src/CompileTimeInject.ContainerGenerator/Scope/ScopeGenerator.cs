@@ -6,11 +6,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using Microsoft.CodeAnalysis.Text;
     using System;
     using System.Linq;
-    using System.Reflection.Metadata;
     using System.Text;
 
     /// <summary>
-    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the Scope type.
+    /// Implementation of an <see cref="ISourceGenerator"/> that is used to generate the "Scope" type.
     /// </summary>
     /// <example>
     /// This SourceGenerator will generate the following code:
@@ -18,17 +17,16 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// namespace CustomCode.CompileTimeInject.GeneratedCode
     /// {
     ///     using System;
-    ///     using System.Collections.Concurrent;
     ///     using System.Collections.Generic;
     ///     using System.Linq;
     ///
     ///     public sealed class Scope : IDisposable
     ///     {
-    ///         internal Scope(string id, Action disposeAction, ConcurrentDictionary<Type, object> singletonInstances)
+    ///         internal Scope(string id, Action disposeAction, ServiceCache singletonInstances)
     ///         {
     ///             Id = id;
     ///             DisposeAction = disposeAction;
-    ///             ScopedInstances = new ConcurrentDictionary<Type, object>();
+    ///             ScopedInstances = new ServiceCache();
     ///             Factory = new ServiceFactory(singletonInstances, ScopedInstances);
     ///         }
     ///
@@ -38,7 +36,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     ///
     ///         private Action DisposeAction { get; }
     ///
-    ///         private ConcurrentDictionary<Type, object> ScopedInstances { get; }
+    ///         private ServiceCache ScopedInstances { get; }
     ///
     ///         public void Dispose()
     ///         {
@@ -85,33 +83,19 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         {
             try
             {
-                var useLifetimeScoped = false;
-
-                // detect scoped services in the current compilation
-                if (context.SyntaxReceiver is ScopeSyntaxReceiver detector)
+                var useScopedServices = false;
+                if (context.SyntaxReceiver is ScopeSyntaxReceiver currrentCompilation)
                 {
-                    useLifetimeScoped = detector.UseLifetimeScoped;
-                    if (!useLifetimeScoped)
+                    useScopedServices = currrentCompilation.UseLifetimeScoped;
+                    if (!useScopedServices)
                     {
-                        // detect scoped services in referenced assemblies
-                        foreach (var reference in context.Compilation.References.OfType<PortableExecutableReference>())
-                        {
-                            var reader = reference.GetMetadataReader();
-                            if (reader == null)
-                            {
-                                continue;
-                            }
-
-                            useLifetimeScoped = reader.DefinesServiceWithLifetimeScoped();
-                            if (useLifetimeScoped)
-                            {
-                                break;
-                            }
-                        }
+                        useScopedServices = context.Compilation
+                            .GetReferencedNetAssemblies()
+                            .Any(compilation => compilation.DefinesServiceWithLifetimeScoped());
                     }
                 }
 
-                if (useLifetimeScoped)
+                if (useScopedServices)
                 {
                     var code = CreateScopeType();
                     context.AddSource("Scope", SourceText.From(code, Encoding.UTF8));
@@ -146,7 +130,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 "namespace CustomCode.CompileTimeInject.GeneratedCode")
                 .BeginScope(
                     "using System;",
-                    "using System.Collections.Concurrent;",
                     "using System.Collections.Generic;",
                     "using System.Linq;",
                     _,
@@ -167,11 +150,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <param name=\"singletonInstances\">",
                         "/// A cache for created singleton service instances.",
                         "/// </param>",
-                        "internal Scope(string id, Action disposeAction, ConcurrentDictionary<Type, object> singletonInstances)")
+                        "internal Scope(string id, Action disposeAction, ServiceCache singletonInstances)")
                         .BeginScope(
                             "Id = id;",
                             "DisposeAction = disposeAction;",
-                            "ScopedInstances = new ConcurrentDictionary<Type, object>();",
+                            "ScopedInstances = new ServiceCache();",
                             "Factory = new ServiceFactory(ScopedInstances, singletonInstances);")
                         .EndScope(
                         _,
@@ -197,7 +180,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// <summary>",
                         "/// A cache for created scoped service instances.",
                         "/// </summary>",
-                        "private ConcurrentDictionary<Type, object> ScopedInstances { get; }",
+                        "private ServiceCache ScopedInstances { get; }",
                         _,
                          "#endregion",
                         _,
