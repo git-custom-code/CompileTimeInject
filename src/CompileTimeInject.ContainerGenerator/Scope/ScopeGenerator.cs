@@ -84,20 +84,35 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
             try
             {
                 var useScopedServices = false;
+                var useNamedServices = false;
                 if (context.SyntaxReceiver is ScopeSyntaxReceiver currrentCompilation)
                 {
                     useScopedServices = currrentCompilation.UseLifetimeScoped;
-                    if (!useScopedServices)
+                    useNamedServices = currrentCompilation.UseNamedServices;
+                    if (!useScopedServices || !useNamedServices)
                     {
-                        useScopedServices = context.Compilation
-                            .GetReferencedNetAssemblies()
-                            .Any(compilation => compilation.DefinesServiceWithLifetimeScoped());
+                        foreach (var compilation in context.Compilation.GetReferencedNetAssemblies())
+                        {
+                            if (compilation.DefinesServiceWithLifetimeScoped())
+                            {
+                                useScopedServices = true;
+                            }
+                            if (compilation.DefinesAnyNamedService())
+                            {
+                                useNamedServices = true;
+                            }
+
+                            if (useScopedServices && useNamedServices)
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
 
                 if (useScopedServices)
                 {
-                    var code = CreateScopeType();
+                    var code = CreateScopeType(useNamedServices);
                     context.AddSource("Scope", SourceText.From(code, Encoding.UTF8));
                 }
             }
@@ -121,8 +136,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <summary>
         /// Create the in-memory source code for the Scope type.
         /// </summary>
+        /// <param name="useNamedServices">
+        /// True if the scope contains named services, false otherwise.
+        /// </param>
         /// <returns> The created in-memory source code. </returns>
-        private string CreateScopeType()
+        private string CreateScopeType(bool useNamedServices)
         {
             var _ = string.Empty;
 
@@ -201,7 +219,20 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                             "var factory = Factory as IServiceFactory<T>;",
                             "return factory?.CreateOrGetService();")
-                        .EndScope(
+                        .EndScope()
+                        .If(useNamedServices, code => code.ContinueWith(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a named service implementation by contract and id.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <param name=\"serviceId\"> The service's unique identifier. </param>",
+                        "/// <returns> The contract's named service implementation or null if no such implementation exists. </returns>",
+                        "public T? GetService<T>(string serviceId) where T : class")
+                        .BeginScope(
+                            "var factory = Factory as INamedServiceFactory<T>;",
+                            "return factory?.CreateOrGetNamedService(serviceId);")
+                        .EndScope()).ContinueWith(
                         _,
                         "/// <summary>",
                         "/// Gets a collection of service implementations of the same contract.",
