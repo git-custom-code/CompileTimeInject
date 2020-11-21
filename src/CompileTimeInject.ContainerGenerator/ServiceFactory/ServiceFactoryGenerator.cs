@@ -420,7 +420,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                                    $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                    $"return service;")
                                 .EndScope(_)).ContinueWith(
-                                "throw new NotSupportedException($\"No singelton service with id {serviceId} was found.\");")
+                                "throw new NotSupportedException($\"No singleton service with id {serviceId} was found.\");")
                             .EndInlineLambdaScope(");").ContinueWith(
                              "if (service != null)")
                             .BeginScope(
