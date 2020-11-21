@@ -191,6 +191,79 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         }
 
         /// <summary>
+        /// Find the exported services in the extended <paramref name="reader"/>.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <returns> The found collection of exported services. </returns>
+        public static IEnumerable<ServiceDescriptor> FindExportedServices(this MetadataReader reader)
+        {
+            var foundServices = new List<ServiceDescriptor>();
+            foreach (var service in reader.GetExportedServices())
+            {
+                var lifetime = Lifetime.Transient;
+                TypeDescriptor? contractFilter = null;
+                foreach (var value in service.ExportAttribute.FixedArguments)
+                {
+                    if (value.Type.FullName == typeof(Lifetime).FullName)
+                    {
+                        lifetime = (Lifetime)(value.Value ?? Lifetime.Transient);
+                    }
+                    else if (value.Type.FullName == typeof(Type).FullName)
+                    {
+                        contractFilter = (TypeDescriptor?)value.Value;
+                    }
+                }
+
+                var serviceId = (string?)null;
+                foreach (var argument in service.ExportAttribute.NamedArguments)
+                {
+                    if (argument.Name == "ServiceId" && argument.Value is string value)
+                    {
+                        serviceId = value;
+                    }
+                }
+
+                var implementation = reader.ToTypeDescriptor(service.TypeDefinition);
+                var dependencies = reader.GetConstructorDependencies(service.TypeDefinition);
+                if (contractFilter.HasValue)
+                {
+                    foundServices.Add(new ServiceDescriptor(
+                        contractFilter.Value,
+                        implementation,
+                        dependencies,
+                        lifetime,
+                        serviceId));
+                }
+                else
+                {
+                    var implementedInterfaces = reader.GetImplementedInterfaces(service.TypeDefinition);
+                    if (implementedInterfaces.Any())
+                    {
+                        foreach (var @interface in implementedInterfaces)
+                        {
+                            foundServices.Add(new ServiceDescriptor(
+                                @interface,
+                                implementation,
+                                dependencies,
+                                lifetime,
+                                serviceId));
+                        }
+                    }
+                    else
+                    {
+                        foundServices.Add(new ServiceDescriptor(
+                            implementation,
+                            dependencies,
+                            lifetime,
+                            serviceId));
+                    }
+                }
+            }
+
+            return foundServices;
+        }
+
+        /// <summary>
         /// Gets a collection of <see cref="TypeDescriptor"/>s for each implemented interface for the
         /// given <paramref name="type"/>.
         /// </summary>

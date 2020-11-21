@@ -4,12 +4,10 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     using CodeGeneration;
     using Metadata;
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.Text;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Reflection.Metadata;
     using System.Text;
 
     /// <summary>
@@ -120,59 +118,20 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 // detect exported services in the current compilation
                 if (context.SyntaxReceiver is ServiceCandidateDetector currentCompilation)
                 {
-                    var foundServices = context.Compilation.FindExportedServices(currentCompilation.ServiceCandidates);
-                    if (foundServices.Any())
+                    var services = context.Compilation.FindExportedServices(currentCompilation.ServiceCandidates);
+                    if (services.Any())
                     {
-                        detectedServices.AddRange(foundServices);
+                        detectedServices.AddRange(services);
                     }
                 }
 
                 // detect eported services in referenced assemblies
-                foreach (var reference in context.Compilation.References.OfType<PortableExecutableReference>())
+                foreach (var compilation in context.Compilation.GetReferencedNetAssemblies())
                 {
-                    var reader = reference.GetMetadataReader();
-                    if (reader == null)
+                    var services = compilation.FindExportedServices();
+                    if (services.Any())
                     {
-                        continue;
-                    }
-
-                    foreach (var service in reader.GetExportedServices())
-                    {
-                        var lifetime = Lifetime.Transient;
-                        TypeDescriptor? contractFilter = null;
-                        foreach (var value in service.ExportAttribute.FixedArguments)
-                        {
-                            if (value.Type.FullName == typeof(Lifetime).FullName)
-                            {
-                                lifetime = (Lifetime)(value.Value ?? Lifetime.Transient);
-                            }
-                            else if (value.Type.FullName == typeof(Type).FullName)
-                            {
-                                contractFilter = (TypeDescriptor?)value.Value;
-                            }
-                        }
-
-                        var implementation = reader.ToTypeDescriptor(service.TypeDefinition);
-                        var dependencies = reader.GetConstructorDependencies(service.TypeDefinition);
-                        if (contractFilter.HasValue)
-                        {
-                            detectedServices.Add(new ServiceDescriptor(contractFilter.Value, implementation, dependencies, lifetime));
-                        }
-                        else
-                        {
-                            var implementedInterfaces = reader.GetImplementedInterfaces(service.TypeDefinition);
-                            if (implementedInterfaces.Any())
-                            {
-                                foreach (var @interface in implementedInterfaces)
-                                {
-                                    detectedServices.Add(new ServiceDescriptor(@interface, implementation, dependencies, lifetime));
-                                }
-                            }
-                            else
-                            {
-                                detectedServices.Add(new ServiceDescriptor(implementation, dependencies, lifetime));
-                            }
-                        }
+                        detectedServices.AddRange(services);
                     }
                 }
 
