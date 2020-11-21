@@ -9,7 +9,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// <summary>
     /// <see cref="ISyntaxReceiver"/> implementation that will search the current <see cref="Compilation"/>
     /// for all types (i.e. <see cref="TypeDeclarationSyntax"/>) that are annotated with an attribute
-    /// whose name starts with "Export" and defines the <see cref="Lifetime.Scoped"/> lifetime policy.
+    /// whose name starts with "Export" and defines either the <see cref="Lifetime.Scoped"/> lifetime policy
+    /// or the optional "ServiceId" property.
     /// </summary>
     public sealed class IocContainerSyntaxReceiver : ISyntaxReceiver
     {
@@ -26,10 +27,21 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         private const string LifetimeScoped = "Lifetime.Scoped";
 
         /// <summary>
+        /// The name of the ServiceId property.
+        /// </summary>
+        private const string ServiceIdPropertyName = "ServiceId";
+
+        /// <summary>
         /// True if the current <see cref="Compilation"/> defines an exported service with <see cref="Lifetime.Scoped"/>,
         /// false otherwise.
         /// </summary>
         public bool UseLifetimeScoped { get; private set; }
+
+        /// <summary>
+        /// True if the current <see cref="Compilation"/> defines an exported named service (with a unique service id),
+        /// false otherwise.
+        /// </summary>
+        public bool UseNamedServices { get; private set; }
 
         #endregion
 
@@ -38,7 +50,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
         /// <inheritdoc cref="ISyntaxReceiver" />
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            if (UseLifetimeScoped)
+            if (UseLifetimeScoped && UseNamedServices)
             {
                 return;
             }
@@ -48,10 +60,20 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 foreach(var attribute in typeSyntax.AttributeLists.SelectMany(list => list.Attributes))
                 {
                     var attributeDeclaration = attribute.ToString();
-                    if (attributeDeclaration.StartsWith(ExportAttributeName, StringComparison.OrdinalIgnoreCase) &&
-                        attributeDeclaration.IndexOf(LifetimeScoped, StringComparison.Ordinal) >= 0)
+                    if (attributeDeclaration.StartsWith(ExportAttributeName, StringComparison.OrdinalIgnoreCase))
                     {
-                        UseLifetimeScoped = true;
+                        if (UseLifetimeScoped == false &&
+                            attributeDeclaration.IndexOf(LifetimeScoped, StringComparison.Ordinal) >= 0)
+                        {
+                            UseLifetimeScoped = true;
+                        }
+
+                        if (UseNamedServices == false &&
+                            attributeDeclaration.IndexOf(ServiceIdPropertyName, StringComparison.Ordinal) >= 0)
+                        {
+                            UseNamedServices = true;
+                        }
+
                         return;
                     }
                 }
