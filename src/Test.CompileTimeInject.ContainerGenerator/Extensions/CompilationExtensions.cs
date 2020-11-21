@@ -93,6 +93,36 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Extensions
             return false;
         }
 
+        /// <summary>
+        /// Query if the extended <paramref name="compilation"/> contains a type (with the given
+        /// <paramref name="typeName"/>) that contains a method with the given <paramref name="methodSignature"/>.
+        /// </summary>
+        /// <param name="compilation"> The extended <see cref="Compilation"/>. </param>
+        /// <param name="typeName"> The name of the type to be found. </param>
+        /// <param name="methodSignature"> The method signature to be found. </param>
+        /// <returns>
+        /// True if a type with the given <paramref name="typeName"/> and <paramref name="methodSignature"/>
+        /// was found, false otherwise.
+        /// </returns>
+        public static bool ContainsTypeWithMethodSignature(
+            this Compilation compilation, string typeName, string methodSignature)
+        {
+            var code = string.Join(" ", methodSignature.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            var typeMethodSignatureWalker = new TypeMethodSignatureWalker();
+            foreach (var tree in compilation.SyntaxTrees)
+            {
+                typeMethodSignatureWalker.Visit(tree.GetRoot());
+                if (typeMethodSignatureWalker.FoundMethodSignaturesByType.TryGetValue(typeName, out var methodSignatures))
+                {
+                    if (methodSignatures.Any(m => m.Equals(code, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         #endregion
     }
 }
