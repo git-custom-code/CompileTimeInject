@@ -330,7 +330,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                         .ForEach(sharedContract.ScopedServices(), (service, code) => code
                         .BeginScope(
-                           $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                           $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd({service.CacheParameter()} =>")
                             .BeginInlineLambdaScope()
                             .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
                              ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
@@ -346,7 +346,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                         .ForEach(sharedContract.SingletonServices(), (service, code) => code
                         .BeginScope(
-                           $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
+                           $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd({service.CacheParameter()} =>")
                             .BeginInlineLambdaScope()
                             .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
                              ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
@@ -367,7 +367,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     .ForEach(namedServiceContract, (namedContract, code) => code.ContinueWith(
                         _,
                        $"/// <inheritdoc cref=\"INamedServiceFactory{{{namedContract.Key.FullName}}}\" />",
-                       $"{namedContract.Key.FullName} INamedServiceFactory<{namedContract.Key.FullName}>.CreateOrGetNamedService(string serviceId)")
+                       $"{namedContract.Key.FullName}? INamedServiceFactory<{namedContract.Key.FullName}>.CreateOrGetNamedService(string serviceId)")
                         .BeginScope()
 
                         // ... with Lifetime.Transient
@@ -385,50 +385,40 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                         // ... with Lifetime.Scoped
 
-                        .If(namedContract.ScopedServices().Any(), code => code.ContinueWith(
-                           $"var scopedService = ({namedContract.Key.FullName})ScopedInstances.GetOrAdd(typeof({namedContract.Key.FullName}), serviceId, id =>")
-                            .BeginInlineLambdaScope()
-                            .ForEach(namedContract.ScopedServices(), (service, code) => code.ContinueWith(
-                               $"if (string.Equals(id, \"{service.ServiceId}\", StringComparison.Ordinal))")
-                                .BeginScope()
+                        .ForEach(namedContract.ScopedServices(), (service, code) => code.ContinueWith(
+                           $"if (string.Equals(serviceId, \"{service.ServiceId}\", StringComparison.Ordinal))")
+                            .BeginScope(
+                               $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), serviceId, _ =>")
+                                .BeginInlineLambdaScope()
                                 .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
                                  ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
                                  : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
                                 .ContinueWith(
                                    $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
-                                   $"return service;")
-                                .EndScope(_)).ContinueWith(
-                                "throw new NotSupportedException($\"No scoped service with id {serviceId} was found.\");")
-                            .EndInlineLambdaScope(");").ContinueWith(
-                             "if (scopedService != null)")
-                            .BeginScope(
-                                "return scopedService;")
+                                    "return service;")
+                                .EndInlineLambdaScope(");").ContinueWith(
+                                "return service;")
                             .EndScope(_))
 
                         // ... with Lifetime.Singleton
 
-                        .If(namedContract.SingletonServices().Any(), code => code.ContinueWith(
-                           $"var service = ({namedContract.Key.FullName})SingletonInstances.GetOrAdd(typeof({namedContract.Key.FullName}), serviceId, id =>")
-                            .BeginInlineLambdaScope()
-                            .ForEach(namedContract.SingletonServices(), (service, code) => code.ContinueWith(
-                               $"if (string.Equals(id, \"{service.ServiceId}\", StringComparison.Ordinal))")
-                                .BeginScope()
+                        .ForEach(namedContract.SingletonServices(), (service, code) => code.ContinueWith(
+                           $"if (string.Equals(serviceId, \"{service.ServiceId}\", StringComparison.Ordinal))")
+                            .BeginScope(
+                               $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), serviceId, _ =>")
+                                .BeginInlineLambdaScope()
                                 .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
                                  ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
                                  : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
                                 .ContinueWith(
                                    $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
-                                   $"return service;")
-                                .EndScope(_)).ContinueWith(
-                                "throw new NotSupportedException($\"No singleton service with id {serviceId} was found.\");")
-                            .EndInlineLambdaScope(");").ContinueWith(
-                             "if (service != null)")
-                            .BeginScope(
+                                    "return service;")
+                                .EndInlineLambdaScope(");").ContinueWith(
                                 "return service;")
                             .EndScope(_))
 
                         .ContinueWith(
-                            "throw new NotSupportedException($\"No service with id {serviceId} was found.\");")
+                            "return default;")
                         .EndScope())
 
                     .ContinueWith(

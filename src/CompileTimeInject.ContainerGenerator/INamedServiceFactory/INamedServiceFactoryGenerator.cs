@@ -20,7 +20,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
     /// {
     ///     public interface INamedServiceFactory<T> where T : class
     ///     {
-    ///         T CreateOrGetNamedService(string serviceId);
+    ///         T? CreateOrGetNamedService(string serviceId);
     ///     }
     /// }
     /// ]]>
@@ -97,7 +97,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         "/// </summary>",
                         "/// <param name=\"serviceId\"> The service's unique identifier. </param>",
                         "/// <returns> The newly created service instance. </returns>",
-                        "T CreateOrGetNamedService(string serviceId);")
+                        "T? CreateOrGetNamedService(string serviceId);")
                     .EndScope()
                 .EndScope();
             return code.ToString();

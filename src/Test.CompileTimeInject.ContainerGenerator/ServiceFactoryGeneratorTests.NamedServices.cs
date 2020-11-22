@@ -55,7 +55,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
                      if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
                      {
@@ -69,7 +69,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                          return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     return default;
                  }"));
         }
 
@@ -118,30 +118,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
-                     var scopedService = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""1"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.FirstFoo();
                                  return service;
-                             }
+                             });
+                         return service;
+                     }
 
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.SecondFoo();
                                  return service;
-                             }
-
-                             throw new NotSupportedException($""No scoped service with id {serviceId} was found."");
-                         });
-                     if (scopedService != null)
-                     {
-                         return scopedService;
+                             });
+                         return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     return default;
                  }"));
         }
 
@@ -190,30 +189,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
-                     var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""1"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.FirstFoo();
                                  return service;
-                             }
-
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
-                             {
-                                 var service = new Demo.Domain.SecondFoo();
-                                 return service;
-                             }
-
-                             throw new NotSupportedException($""No singleton service with id {serviceId} was found."");
-                         });
-                     if (service != null)
-                     {
+                             });
                          return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
+                             {
+                                 var service = new Demo.Domain.SecondFoo();
+                                 return service;
+                             });
+                         return service;
+                     }
+
+                     return default;
                  }"));
         }
 
@@ -262,7 +260,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
                      if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
                      {
@@ -270,22 +268,17 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                          return service;
                      }
 
-                     var scopedService = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.SecondFoo();
                                  return service;
-                             }
-
-                             throw new NotSupportedException($""No scoped service with id {serviceId} was found."");
-                         });
-                     if (scopedService != null)
-                     {
-                         return scopedService;
+                             });
+                         return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     return default;
                  }"));
         }
 
@@ -334,7 +327,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
                      if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
                      {
@@ -342,22 +335,17 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                          return service;
                      }
 
-                     var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.SecondFoo();
                                  return service;
-                             }
-
-                             throw new NotSupportedException($""No singleton service with id {serviceId} was found."");
-                         });
-                     if (service != null)
-                     {
+                             });
                          return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     return default;
                  }"));
         }
 
@@ -406,39 +394,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
-                     var scopedService = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""1"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.FirstFoo();
                                  return service;
-                             }
-
-                             throw new NotSupportedException($""No scoped service with id {serviceId} was found."");
-                         });
-                     if (scopedService != null)
-                     {
-                         return scopedService;
-                     }
-
-                     var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
-                             {
-                                 var service = new Demo.Domain.SecondFoo();
-                                 return service;
-                             }
-
-                             throw new NotSupportedException($""No singleton service with id {serviceId} was found."");
-                         });
-                     if (service != null)
-                     {
+                             });
                          return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
+                             {
+                                 var service = new Demo.Domain.SecondFoo();
+                                 return service;
+                             });
+                         return service;
+                     }
+
+                     return default;
                  }"));
         }
 
@@ -497,7 +475,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
             Assert.False(diagnostics.HasErrors());
             Assert.True(output.ContainsTypeWithMethodImplementation(
                 "ServiceFactory",
-               @"Demo.Domain.IFoo INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
+               @"Demo.Domain.IFoo? INamedServiceFactory<Demo.Domain.IFoo>.CreateOrGetNamedService(string serviceId)
                  {
                      if (string.Equals(serviceId, ""1"", StringComparison.Ordinal))
                      {
@@ -505,37 +483,27 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                          return service;
                      }
 
-                     var scopedService = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""2"", StringComparison.Ordinal))
+                     if (string.Equals(serviceId, ""2"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)ScopedInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
                              {
                                  var service = new Demo.Domain.SecondFoo();
                                  return service;
-                             }
-
-                             throw new NotSupportedException($""No scoped service with id {serviceId} was found."");
-                         });
-                     if (scopedService != null)
-                     {
-                         return scopedService;
-                     }
-
-                     var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, id =>
-                         {
-                             if (string.Equals(id, ""3"", StringComparison.Ordinal))
-                             {
-                                 var service = new Demo.Domain.ThirdFoo();
-                                 return service;
-                             }
-
-                             throw new NotSupportedException($""No singleton service with id {serviceId} was found."");
-                         });
-                     if (service != null)
-                     {
+                             });
                          return service;
                      }
 
-                     throw new NotSupportedException($""No service with id {serviceId} was found."");
+                     if (string.Equals(serviceId, ""3"", StringComparison.Ordinal))
+                     {
+                         var service = (Demo.Domain.IFoo)SingletonInstances.GetOrAdd(typeof(Demo.Domain.IFoo), serviceId, _ =>
+                             {
+                                 var service = new Demo.Domain.ThirdFoo();
+                                 return service;
+                             });
+                         return service;
+                     }
+
+                     return default;
                  }"));
         }
     }
