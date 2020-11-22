@@ -35,13 +35,23 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// <summary>
         /// Gets the <paramref name="dependency"/>'s contract if it is injected as <see cref="Func{TResult}"/>.
         /// </summary>
-        /// <param name="dependency"> The extended <see cref="TypeDescriptor"/>. </param>
+        /// <param name="dependency"> The extended <see cref="DependencyDescriptor"/>. </param>
         /// <returns> The contract of the injected dependency (i.e. the factories return type). </returns>
         public static string Contract(this DependencyDescriptor dependency)
         {
-            var start = "System.Func<".Length;
-            var length = dependency.Contract.FullName.Length - start - 1;
-            return dependency.Contract.FullName.Substring(start, length);
+            if (dependency.Contract.FullName.StartsWith("System.Func<", StringComparison.Ordinal))
+            {
+                var start = "System.Func<".Length;
+                var length = dependency.Contract.FullName.Length - start - 1;
+                return dependency.Contract.FullName.Substring(start, length);
+            }
+            else if (dependency.Contract.FullName.StartsWith("Func<", StringComparison.Ordinal))
+            {
+                var start = "Func<".Length;
+                var length = dependency.Contract.FullName.Length - start - 1;
+                return dependency.Contract.FullName.Substring(start, length);
+            }
+            return dependency.Contract.FullName;
         }
 
         /// <summary>
@@ -60,15 +70,29 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         }
 
         /// <summary>
-        /// Query if the given <paramref name="dependency"/> is injected as factory of type <see cref="Func{TResult}"/>.
+        /// Get the correct "CreateOrGetService" / "CreateOrGetNamedService" call for the given <paramref name="dependency"/>.
         /// </summary>
-        /// <param name="dependency"> The extended <see cref="TypeDescriptor"/>. </param>
+        /// <param name="dependency"> The extended <see cref="DependencyDescriptor"/>. </param>
         /// <returns>
-        /// True if the dependency is injected as factory of type <see cref="Func{TResult}"/>, false otherwise.
+        /// The corret call for creating an instance of the given <paramref name="dependency"/>.
         /// </returns>
-        public static bool IsFactory(this DependencyDescriptor dependency)
+        public static string CreateOrGetService(this DependencyDescriptor dependency)
         {
-            return dependency.Contract.FullName.StartsWith("System.Func<");
+            if (dependency.Contract.FullName.StartsWith("Func<", StringComparison.Ordinal) ||
+                dependency.Contract.FullName.StartsWith("System.Func<", StringComparison.Ordinal))
+            {
+                if (string.IsNullOrEmpty(dependency.ServiceId))
+                {
+                    return $"new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService)";
+                }
+                return $"new Func<{dependency.Contract()}>(((INamedServiceFactory<{dependency.Contract()}>)this).CreateOrGetNamedService(\"{dependency.ServiceId}\"))";
+            }
+
+            if (string.IsNullOrEmpty(dependency.ServiceId))
+            {
+                return $"((IServiceFactory<{dependency.Contract.FullName}>)this).CreateOrGetService()";
+            }
+            return $"((INamedServiceFactory<{dependency.Contract.FullName}>)this).CreateOrGetNamedService(\"{dependency.ServiceId}\")";
         }
 
         /// <summary>
