@@ -227,5 +227,19 @@ namespace CustomCode.CompileTimeInject.Tests
             Assert.NotEqual(fooOuterScope?.Id, fooInnerScope?.Id);
             Assert.Equal(fooOuterScope?.Id, fooOuterScopeAfterDispose?.Id);
         }
+
+        [Fact]
+        public void GetNamedService()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            var foo = container.GetService<directRef.AsNamedService.IFoo>("FirstFoo");
+            
+            // Then
+            Assert.NotNull(foo);
+            Assert.Equal("First", foo.Id);
+        }
     }
 }
