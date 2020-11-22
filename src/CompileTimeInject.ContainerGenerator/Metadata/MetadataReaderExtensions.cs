@@ -36,12 +36,6 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                     {
                         var dependency = signature.ParameterTypes[i];
                         var serviceId = reader.GetServiceId(method, i + 1);
-
-                        if (!string.IsNullOrEmpty(serviceId))
-                        {
-                            throw new Exception(serviceId);
-                        }
-
                         dependencies.Add(new DependencyDescriptor(
                             contract: dependency,
                             serviceId: serviceId));
