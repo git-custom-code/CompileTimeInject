@@ -21,9 +21,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
         /// <param name="type"> The type whose constructor dependencies should be returned. </param>
         /// <returns> A collection of <see cref="TypeDescriptor"/>s for constructor dependency. </returns>
-        public static IEnumerable<TypeDescriptor> GetConstructorDependencies(this MetadataReader reader, TypeDefinition type)
+        public static IEnumerable<DependencyDescriptor> GetConstructorDependencies(this MetadataReader reader, TypeDefinition type)
         {
-            var dependencies = new List<TypeDescriptor>();
+            var dependencies = new List<DependencyDescriptor>();
             foreach (var handle in type.GetMethods())
             {
                 var method = reader.GetMethodDefinition(handle);
@@ -32,15 +32,78 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                     reader.GetString(method.Name) == ".ctor")
                 {
                     var signature = method.DecodeSignature(new TypeDescriptorSignatureProvider(), null);
-                    foreach (var dependency in signature.ParameterTypes)
+                    for (var i = 0; i < signature.ParameterTypes.Length; ++i)
                     {
-                        dependencies.Add(dependency);
+                        var dependency = signature.ParameterTypes[i];
+                        var serviceId = reader.GetServiceId(method, i + 1);
+
+                        if (!string.IsNullOrEmpty(serviceId))
+                        {
+                            throw new Exception(serviceId);
+                        }
+
+                        dependencies.Add(new DependencyDescriptor(
+                            contract: dependency,
+                            serviceId: serviceId));
                     }
 
                     break; // ToDo: How to handle multiple ctor's?
                 }
             }
             return dependencies;
+        }
+
+        /// <summary>
+        /// Gets the optional <see cref="ImportAttribute.ServiceId"/> from the <paramref name="ctor"/>
+        /// parameter with the given <paramref name="sequenceNumber"/>.
+        /// </summary>
+        /// <param name="reader"> The extended <see cref="MetadataReader"/>. </param>
+        /// <param name="ctor"> The constructor's <see cref="MethodDefinition"/>. </param>
+        /// <param name="sequenceNumber"> The sequence number of the parameter whose ServiceId should be retrieved. </param>
+        /// <returns> The parameter's optional ServiceId. </returns>
+        private static string? GetServiceId(this MetadataReader reader, MethodDefinition ctor, int sequenceNumber)
+        {
+            foreach (var parameterHandle in ctor.GetParameters())
+            {
+                var parameter = reader.GetParameter(parameterHandle);
+                if (parameter.SequenceNumber != sequenceNumber)
+                {
+                    continue;
+                }
+
+                foreach (var attributeHandle in parameter.GetCustomAttributes())
+                {
+                    var customAttribute = reader.GetCustomAttribute(attributeHandle);
+                    if (customAttribute.Constructor.Kind != HandleKind.MemberReference)
+                    {
+                        return null;
+                    }
+
+                    var attributeCtor = reader.GetMemberReference((MemberReferenceHandle)customAttribute.Constructor);
+                    if (attributeCtor.Parent.Kind != HandleKind.TypeReference)
+                    {
+                        return null;
+                    }
+
+                    var attributeType = reader.GetTypeReference((TypeReferenceHandle)attributeCtor.Parent);
+                    var name = reader.GetString(attributeType.Name);
+                    var @namespace = reader.GetString(attributeType.Namespace);
+                    if (typeof(ImportAttribute).Name.Equals(name, StringComparison.Ordinal) &&
+                        typeof(ImportAttribute).Namespace.Equals(@namespace, StringComparison.Ordinal))
+                    {
+                        var attribute = customAttribute.DecodeValue(new TypeDescriptorAttributeProvider());
+                        foreach (var argument in attribute.FixedArguments)
+                        {
+                            if (argument.Value is string serviceId)
+                            {
+                                return serviceId;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -78,7 +141,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                         string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
                     {
-                        var exportAttribute = attribute.DecodeValue(new ExportAttributeProvider());
+                        var exportAttribute = attribute.DecodeValue(new TypeDescriptorAttributeProvider());
                         var serviceDefinition = reader.GetTypeDefinition((TypeDefinitionHandle)attribute.Parent);
                         exportedTypes.Add(new ServiceMetadata(exportAttribute, serviceDefinition));
                     }
@@ -122,7 +185,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                         string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
                     {
-                        var exportAttribute = attribute.DecodeValue(new ExportAttributeProvider());
+                        var exportAttribute = attribute.DecodeValue(new TypeDescriptorAttributeProvider());
                         foreach (var value in exportAttribute.FixedArguments)
                         {
                             if (value.Type.FullName == typeof(Lifetime).FullName)
@@ -175,7 +238,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                         string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
                     {
-                        var exportAttribute = attribute.DecodeValue(new ExportAttributeProvider());
+                        var exportAttribute = attribute.DecodeValue(new TypeDescriptorAttributeProvider());
                         foreach (var value in exportAttribute.NamedArguments)
                         {
                             if (value.Name == "ServiceId" && value.Value is string)
