@@ -63,42 +63,18 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                 {
                     if (typeof(ExportAttribute).FullName.Equals(attribute.AttributeClass?.ToString(), StringComparison.Ordinal))
                     {
-                        var constructorArguments = attribute.ConstructorArguments;
-                        var lifetime = Lifetime.Transient;
-                        TypeDescriptor? contractFilter = null;
-                        foreach (var argument in constructorArguments)
-                        {
-                            if (argument.Kind == TypedConstantKind.Type && argument.Value != null)
-                            {
-                                contractFilter = new TypeDescriptor(argument.Value.ToString());
-                            }
-                            else if (argument.Kind == TypedConstantKind.Enum && argument.Value is byte enumValue)
-                            {
-                                lifetime = (Lifetime)enumValue;
-                            }
-                        }
-
-                        var namedArguments = attribute.NamedArguments;
-                        var serviceId = (string?)null;
-                        foreach (var argument in namedArguments)
-                        {
-                            if (argument.Key == "ServiceId" && argument.Value.Value is string value)
-                            {
-                                serviceId = value;
-                            }
-                        }
-
+                        var options = GetExportOptions(attribute);
                         var implementation = new TypeDescriptor(classSymbol.ToString());
-                        var ctor = classSymbol.InstanceConstructors.Single();
-                        var dependencies = ctor.Parameters.Select(p => new TypeDescriptor(p.Type.ToString())).ToList();
-                        if (contractFilter.HasValue)
+                        var dependencies = GetConstructorDependencies(classSymbol);
+
+                        if (options.contractFilter.HasValue)
                         {
                             foundServices.Add(new ServiceDescriptor(
-                                contractFilter.Value,
+                                options.contractFilter.Value,
                                 implementation,
                                 dependencies,
-                                lifetime,
-                                serviceId));
+                                options.lifetime,
+                                options.serviceId));
                         }
                         else
                         {
@@ -111,8 +87,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                                         contract,
                                         implementation,
                                         dependencies,
-                                        lifetime,
-                                        serviceId));
+                                        options.lifetime,
+                                        options.serviceId));
                                 }
                             }
                             else
@@ -120,8 +96,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
                                 foundServices.Add(new ServiceDescriptor(
                                    implementation,
                                    dependencies,
-                                   lifetime,
-                                   serviceId));
+                                   options.lifetime,
+                                   options.serviceId));
                             }
                         }
                     }
@@ -129,6 +105,86 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             }
 
             return foundServices;
+        }
+
+        /// <summary>
+        /// Extract the values of the <see cref="ExportAttribute.Lifetime"/>, <see cref="ExportAttribute.ServiceContract"/>
+        /// and <see cref="ExportAttribute.ServiceId"/> properties.
+        /// </summary>
+        /// <param name="attribute"> The <see cref="ExportAttribute"/> whose values should be retrieved. </param>
+        /// <returns> The <see cref="ExportAttribute"/>'s property values. </returns>
+        private static (Lifetime lifetime, TypeDescriptor? contractFilter, string? serviceId) GetExportOptions(AttributeData attribute)
+        {
+            var constructorArguments = attribute.ConstructorArguments;
+            var lifetime = Lifetime.Transient;
+            var contractFilter = (TypeDescriptor?)null;
+            foreach (var argument in constructorArguments)
+            {
+                if (argument.Kind == TypedConstantKind.Type && argument.Value != null)
+                {
+                    contractFilter = new TypeDescriptor(argument.Value.ToString());
+                }
+                else if (argument.Kind == TypedConstantKind.Enum && argument.Value is byte enumValue)
+                {
+                    lifetime = (Lifetime)enumValue;
+                }
+            }
+
+            var namedArguments = attribute.NamedArguments;
+            var serviceId = (string?)null;
+            foreach (var argument in namedArguments)
+            {
+                if (argument.Key == nameof(ExportAttribute.ServiceId) &&
+                    argument.Value.Value is string value)
+                {
+                    serviceId = value;
+                }
+            }
+
+            return (lifetime, contractFilter, serviceId);
+        }
+
+        /// <summary>
+        /// Gets a collection of <see cref="DependencyDescriptor"/>s for the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type"> The <see cref="Type"/> whose constructor dependencies should be retrieved. </param>
+        /// <returns> The constructor dependencies of the given <paramref name="type"/>. </returns>
+        private static List<DependencyDescriptor> GetConstructorDependencies(INamedTypeSymbol type)
+        {
+            var ctor = type.InstanceConstructors.Single();
+            var dependencies = ctor.Parameters
+                .Select(p => new DependencyDescriptor(
+                    contract: new TypeDescriptor(p.Type.ToString()),
+                    serviceId: GetServiceId(p)))
+                .ToList();
+            return dependencies;
+        }
+
+        /// <summary>
+        /// Extract the <see cref="ImportAttribute.ServiceId"/> for the given <paramref name="parameter"/>.
+        /// </summary>
+        /// <param name="parameter"> The constructor parameter whose optional ServiceId should be retrieved. </param>
+        /// <returns> The parameter's optioal ServiceId. </returns>
+        private static string? GetServiceId(IParameterSymbol parameter)
+        {
+            var serviceId = (string?)null;
+            foreach (var attribute in parameter.GetAttributes())
+            {
+                if (nameof(ImportAttribute).Equals(attribute.AttributeClass?.Name, StringComparison.Ordinal))
+                {
+                    foreach (var argument in attribute.ConstructorArguments)
+                    {
+                        if (argument.Kind == TypedConstantKind.Primitive &&
+                            argument.Value is string value)
+                        {
+                            serviceId = value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return serviceId;
         }
 
         #endregion
