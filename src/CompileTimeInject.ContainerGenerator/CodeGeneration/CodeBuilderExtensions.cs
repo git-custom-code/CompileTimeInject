@@ -45,6 +45,21 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         }
 
         /// <summary>
+        /// Get the correct parameters for the "ServiceCache.GetOrAdd" method call.
+        /// </summary>
+        /// <param name="service"> The <see cref="ServiceDescriptor"/> whose parameters should be retrieved. </param>
+        /// <returns> The correct parameters for the "ServiceCache.GetOrAdd" method call. </returns>
+        public static string CacheParameter(this ServiceDescriptor service)
+        {
+            if (string.IsNullOrEmpty(service.ServiceId))
+            {
+                return $"typeof({service.Contract.FullName}), _";
+            }
+
+            return $"typeof({service.Contract.FullName}), \"{service.ServiceId}\", _";
+        }
+
+        /// <summary>
         /// Query if the given <paramref name="dependency"/> is injected as factory of type <see cref="Func{TResult}"/>.
         /// </summary>
         /// <param name="dependency"> The extended <see cref="TypeDescriptor"/>. </param>
