@@ -22,7 +22,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <param name="serviceId"> An optional and unique identifier for the service. </param>
         public ServiceDescriptor(
             TypeDescriptor implementation,
-            IEnumerable<TypeDescriptor>? dependencies = null,
+            IEnumerable<DependencyDescriptor>? dependencies = null,
             Lifetime lifetime = Lifetime.Transient,
             string? serviceId = null)
             : this(implementation, implementation, dependencies, lifetime, serviceId)
@@ -39,12 +39,12 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         public ServiceDescriptor(
             TypeDescriptor contract,
             TypeDescriptor implementation,
-            IEnumerable<TypeDescriptor>? dependencies = null,
+            IEnumerable<DependencyDescriptor>? dependencies = null,
             Lifetime lifetime = Lifetime.Transient,
             string? serviceId = null)
         {
             Contract = contract;
-            Dependencies = dependencies ?? Enumerable.Empty<TypeDescriptor>();
+            Dependencies = dependencies ?? Enumerable.Empty<DependencyDescriptor>();
             Implementation = implementation;
             Lifetime = lifetime;
             ServiceId = serviceId;
@@ -67,7 +67,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// <summary>
         /// Gets the service's (constructor) dependencies, that need to be injected.
         /// </summary>
-        public IEnumerable<TypeDescriptor> Dependencies { get; }
+        public IEnumerable<DependencyDescriptor> Dependencies { get; }
 
         /// <summary>
         /// Gets the service's lifetime policy.
