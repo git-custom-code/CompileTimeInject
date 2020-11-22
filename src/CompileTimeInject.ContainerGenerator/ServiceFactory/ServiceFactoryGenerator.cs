@@ -259,9 +259,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                        $"/// <inheritdoc cref=\"IServiceFactory{{{service.Contract.FullName}}}\" />",
                        $"{service.Contract.FullName} IServiceFactory<{service.Contract.FullName}>.CreateOrGetService()")
                         .BeginScope()
-                        .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                         ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                         : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                        .ForEach(service.Dependencies, (dependency, index) =>
+                           $"var dependency{index} = {dependency.CreateOrGetService()};")
                         .ContinueWith(
                            $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                             "return service;")
@@ -276,9 +275,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                            $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
                             .BeginInlineLambdaScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                 "return service;")
@@ -295,9 +293,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                            $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), _ =>")
                             .BeginInlineLambdaScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                 "return service;")
@@ -318,9 +315,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
 
                         .ForEach(sharedContract.TransientServices(), (service, code) => code
                         .BeginScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                $"services.Add(service);")
@@ -332,9 +328,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                            $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd({service.CacheParameter()} =>")
                             .BeginInlineLambdaScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                 "return service;")
@@ -348,9 +343,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                            $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd({service.CacheParameter()} =>")
                             .BeginInlineLambdaScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                 "return service;")
@@ -375,9 +369,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .ForEach(namedContract.TransientServices(), (service, code) => code.ContinueWith(
                            $"if (string.Equals(serviceId, \"{service.ServiceId}\", StringComparison.Ordinal))")
                             .BeginScope()
-                            .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                             ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                             : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                            .ForEach(service.Dependencies, (dependency, index) =>
+                               $"var dependency{index} = {dependency.CreateOrGetService()};")
                             .ContinueWith(
                                $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                $"return service;")
@@ -390,9 +383,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             .BeginScope(
                                $"var service = ({service.Contract.FullName})ScopedInstances.GetOrAdd(typeof({service.Contract.FullName}), serviceId, _ =>")
                                 .BeginInlineLambdaScope()
-                                .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                                 ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                                 : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                                .ForEach(service.Dependencies, (dependency, index) =>
+                                   $"var dependency{index} = {dependency.CreateOrGetService()};")
                                 .ContinueWith(
                                    $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                     "return service;")
@@ -407,9 +399,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             .BeginScope(
                                $"var service = ({service.Contract.FullName})SingletonInstances.GetOrAdd(typeof({service.Contract.FullName}), serviceId, _ =>")
                                 .BeginInlineLambdaScope()
-                                .ForEach(service.Dependencies, (dependency, index) => dependency.IsFactory()
-                                 ? $"var dependency{index} = new Func<{dependency.Contract()}>(((IServiceFactory<{dependency.Contract()}>)this).CreateOrGetService);"
-                                 : $"var dependency{index} = ((IServiceFactory<{dependency.FullName}>)this).CreateOrGetService();")
+                                .ForEach(service.Dependencies, (dependency, index) =>
+                                   $"var dependency{index} = {dependency.CreateOrGetService()};")
                                 .ContinueWith(
                                    $"var service = new {service.Implementation.FullName}({service.Dependencies.CommaSeparated()});",
                                     "return service;")
