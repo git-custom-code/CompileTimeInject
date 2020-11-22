@@ -235,11 +235,16 @@ namespace CustomCode.CompileTimeInject.Tests
             var container = new IocContainer();
 
             // When
-            var foo = container.GetService<directRef.AsNamedService.IFoo>("FirstFoo");
-            
+            var foo = container.GetService<directRef.AsNamedService.IFoo>("FirstFooId");
+            var bar = container.GetService<directRef.AsNamedService.IBar>();
+
             // Then
             Assert.NotNull(foo);
-            Assert.Equal("First", foo.Id);
+            Assert.Equal("1", foo.Id);
+
+            Assert.NotNull(bar);
+            Assert.NotNull(bar.Foo);
+            Assert.Equal("2", bar.Foo.Id);
         }
     }
 }

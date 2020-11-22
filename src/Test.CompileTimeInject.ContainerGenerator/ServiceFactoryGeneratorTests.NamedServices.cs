@@ -506,5 +506,155 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Tests
                      return default;
                  }"));
         }
+
+        [Fact(DisplayName = "Class : IFoo (named dependency)")]
+        public void ImportNamedDependency()
+        {
+            // Given
+            var input = CompilationBuilder.CreateAssemblyWithCode(
+                @"namespace Demo.Domain
+                  {
+                      public interface IFoo
+                      {
+                          IBar Dependency { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      public interface IBar
+                      {
+                          string Id { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export]
+                      public sealed class Foo : IFoo
+                      {
+                          public Foo([Import(""1"")] IBar dependency)
+                          {
+                              Dependency = dependency;
+                          }
+
+                          public IBar Dependency { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export(ServiceId = ""1"")]
+                      public sealed class FirstBar : IBar
+                      {
+                          public string Id { get; } = ""1"";
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export(ServiceId = ""2"")]
+                      public sealed class SecondBar : IBar
+                      {
+                          public string Id { get; } = ""2"";
+                      }
+                  }");
+            var sourceGenerator = new ServiceFactoryGenerator();
+            var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
+
+            // When
+            testEnvironment.RunGeneratorsAndUpdateCompilation(
+                compilation: input,
+                outputCompilation: out var output,
+                diagnostics: out var diagnostics);
+
+            // Then
+            Assert.False(diagnostics.HasErrors());
+            Assert.True(output.ContainsTypeWithMethodImplementation(
+                "ServiceFactory",
+               @"Demo.Domain.IFoo IServiceFactory<Demo.Domain.IFoo>.CreateOrGetService()
+                 {
+                     var dependency1 = ((INamedServiceFactory<Demo.Domain.IBar>)this).CreateOrGetNamedService(""1"");
+                     var service = new Demo.Domain.Foo(dependency1);
+                     return service;
+                 }"));
+        }
+
+        [Fact(DisplayName = "Class : IFoo (named factory)")]
+        public void ImportNamedDependencyFactory()
+        {
+            // Given
+            var input = CompilationBuilder.CreateAssemblyWithCode(
+                @"namespace Demo.Domain
+                  {
+                      public interface IFoo
+                      {
+                          IBar Dependency { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      public interface IBar
+                      {
+                          string Id { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export]
+                      public sealed class Foo : IFoo
+                      {
+                          public Foo([Import(""1"")] Func<IBar> factory)
+                          {
+                              Dependency = factory();
+                          }
+
+                          public IBar Dependency { get; }
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export(ServiceId = ""1"")]
+                      public sealed class FirstBar : IBar
+                      {
+                          public string Id { get; } = ""1"";
+                      }
+                  }",
+                @"namespace Demo.Domain
+                  {
+                      using CustomCode.CompileTimeInject.Annotations;
+
+                      [Export(ServiceId = ""2"")]
+                      public sealed class SecondBar : IBar
+                      {
+                          public string Id { get; } = ""2"";
+                      }
+                  }");
+            var sourceGenerator = new ServiceFactoryGenerator();
+            var testEnvironment = CSharpGeneratorDriver.Create(sourceGenerator);
+
+            // When
+            testEnvironment.RunGeneratorsAndUpdateCompilation(
+                compilation: input,
+                outputCompilation: out var output,
+                diagnostics: out var diagnostics);
+
+            // Then
+            Assert.False(diagnostics.HasErrors());
+            Assert.True(output.ContainsTypeWithMethodImplementation(
+                "ServiceFactory",
+               @"Demo.Domain.IFoo IServiceFactory<Demo.Domain.IFoo>.CreateOrGetService()
+                 {
+                     var dependency1 = new Func<Demo.Domain.IBar>(((INamedServiceFactory<Demo.Domain.IBar>)this).CreateOrGetNamedService(""1""));
+                     var service = new Demo.Domain.Foo(dependency1);
+                     return service;
+                 }"));
+        }
     }
 }
