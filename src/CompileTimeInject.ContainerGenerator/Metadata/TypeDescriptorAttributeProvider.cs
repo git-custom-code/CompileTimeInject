@@ -6,13 +6,13 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
 
     /// <summary>
     /// Specialized implementation of the <see cref="ICustomAttributeTypeProvider{TType}"/> interface
-    /// for <see cref="ExportAttribute"/> deserialization.
+    /// for <see cref="ExportAttribute"/> or <see cref="ImportAttribute"/> deserialization.
     /// </summary>
-    public sealed class ExportAttributeProvider : ICustomAttributeTypeProvider<TypeDescriptor>
+    public sealed class TypeDescriptorAttributeProvider : ICustomAttributeTypeProvider<TypeDescriptor>
     {
         #region Logic
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISimpleTypeProvider{TType}" />
         public TypeDescriptor GetPrimitiveType(PrimitiveTypeCode typeCode)
         {
             switch (typeCode)
@@ -56,39 +56,39 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ICustomAttributeTypeProvider{TType}" />
         public TypeDescriptor GetSystemType()
         {
             return new TypeDescriptor(typeof(Type).Namespace, typeof(Type).Name);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISZArrayTypeProvider{TType}" />
         public TypeDescriptor GetSZArrayType(TypeDescriptor elementType)
         {
             return new TypeDescriptor($"{elementType.FullName}[]");
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISimpleTypeProvider{TType}" />
         public TypeDescriptor GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
             var definition = reader.GetTypeDefinition(handle);
             return reader.ToTypeDescriptor(definition);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ISimpleTypeProvider{TType}" />
         public TypeDescriptor GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
             var reference = reader.GetTypeReference(handle);
             return reader.ToTypeDescriptor(reference); 
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ICustomAttributeTypeProvider{TType}" />
         public TypeDescriptor GetTypeFromSerializedName(string name)
         {
             return new TypeDescriptor(name);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ICustomAttributeTypeProvider{TType}" />
         public PrimitiveTypeCode GetUnderlyingEnumType(TypeDescriptor type)
         {
             if (type.FullName == $"{typeof(Lifetime).FullName}")
@@ -99,7 +99,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
             return PrimitiveTypeCode.Int32;
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="ICustomAttributeTypeProvider{TType}" />
         public bool IsSystemType(TypeDescriptor type)
         {
             return type.FullName == typeof(Type).FullName;
