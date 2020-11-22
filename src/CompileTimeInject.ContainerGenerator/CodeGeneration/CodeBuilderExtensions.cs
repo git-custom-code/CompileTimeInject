@@ -22,7 +22,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// <returns>
         /// A collection of <paramref name="dependencies"/> as comma separated constructor parameters.
         /// </returns>
-        public static string CommaSeparated(this IEnumerable<TypeDescriptor> dependencies)
+        public static string CommaSeparated(this IEnumerable<DependencyDescriptor> dependencies)
         {
             if (dependencies.Any())
             {
@@ -37,11 +37,11 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// </summary>
         /// <param name="dependency"> The extended <see cref="TypeDescriptor"/>. </param>
         /// <returns> The contract of the injected dependency (i.e. the factories return type). </returns>
-        public static string Contract(this TypeDescriptor dependency)
+        public static string Contract(this DependencyDescriptor dependency)
         {
             var start = "System.Func<".Length;
-            var length = dependency.FullName.Length - start - 1;
-            return dependency.FullName.Substring(start, length);
+            var length = dependency.Contract.FullName.Length - start - 1;
+            return dependency.Contract.FullName.Substring(start, length);
         }
 
         /// <summary>
@@ -66,9 +66,9 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.CodeGeneration
         /// <returns>
         /// True if the dependency is injected as factory of type <see cref="Func{TResult}"/>, false otherwise.
         /// </returns>
-        public static bool IsFactory(this TypeDescriptor dependency)
+        public static bool IsFactory(this DependencyDescriptor dependency)
         {
-            return dependency.FullName.StartsWith("System.Func<");
+            return dependency.Contract.FullName.StartsWith("System.Func<");
         }
 
         /// <summary>
