@@ -1,6 +1,7 @@
 namespace CustomCode.CompileTimeInject.Tests
 {
     using GeneratedCode;
+    using System;
     using System.Linq;
     using Xunit;
     using directRef = Test.DirectReference;
@@ -245,6 +246,19 @@ namespace CustomCode.CompileTimeInject.Tests
             Assert.NotNull(bar);
             Assert.NotNull(bar.Foo);
             Assert.Equal("2", bar.Foo.Id);
+        }
+
+        [Fact]
+        public void GetInvalidNamedService()
+        {
+            // Given
+            var container = new IocContainer();
+
+            // When
+            Action callWithException = () => container.GetRequiredService<directRef.AsNamedService.IFoo>("InvalidId");
+            
+            // Then
+            Assert.Throws<InvalidServiceException>(callWithException);
         }
     }
 }
