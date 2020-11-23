@@ -266,6 +266,22 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                             "var factory = Factory as IServiceFactory<T>;",
                             "return factory?.CreateOrGetService();")
+                        .EndScope(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a required service implementation by contract.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <returns> The contract's service implementation. </returns>",
+                        "/// <exception cref=\"InvalidServiceException\"> Thrown if no service instance could be created. </exception>",
+                        "public T GetRequiredService<T>() where T : class")
+                        .BeginScope(
+                            "if (Factory is IServiceFactory<T> factory)")
+                            .BeginScope(
+                                "return factory.CreateOrGetService();")
+                            .EndScope(
+                            _,
+                            "throw new InvalidServiceException(typeof(T));")
                         .EndScope()
                         .If(useNamedServices, code => code.ContinueWith(
                         _,
@@ -279,6 +295,24 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                             "var factory = Factory as INamedServiceFactory<T>;",
                             "return factory?.CreateOrGetNamedService(serviceId);")
+                        .EndScope(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a required named service implementation by contract and id.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <param name=\"serviceId\"> The service's unique identifier. </param>",
+                        "/// <returns> The contract's named service implementation or null if no such implementation exists. </returns>",
+                        "/// <exception cref=\"InvalidServiceException\"> Thrown if no service instance could be created. </exception>",
+                        "public T GetRequiredService<T>(string serviceId) where T : class")
+                        .BeginScope(
+                            "var factory = Factory as INamedServiceFactory<T>;",
+                            "var service = factory?.CreateOrGetNamedService(serviceId);",
+                            "if (service == null)")
+                            .BeginScope(
+                                "throw new InvalidServiceException(typeof(T), serviceId);")
+                            .EndScope(
+                            "return service;")
                         .EndScope()).ContinueWith(
                         _,
                         "/// <summary>",
@@ -404,6 +438,23 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                             "var scope = GetActiveScope();",
                             "var service = scope.GetService<T>();",
                             "return service;")
+                        .EndScope(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a required service implementation by contract.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <returns> The contract's service implementation. </returns>",
+                        "/// <exception cref=\"InvalidServiceException\"> Thrown if no service instance could be created. </exception>",
+                        "public T GetRequiredService<T>() where T : class")
+                        .BeginScope(
+                            "var scope = GetActiveScope();",
+                            "var service = scope.GetService<T>();",
+                            "if (service == null)")
+                            .BeginScope(
+                                "throw new InvalidServiceException(typeof(T));")
+                            .EndScope(
+                            "return service;")
                         .EndScope()
                         .If(useNamedServices, code => code.ContinueWith(
                         _,
@@ -417,6 +468,24 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                         .BeginScope(
                             "var scope = GetActiveScope();",
                             "var service = scope.GetService<T>(serviceId);",
+                            "return service;")
+                        .EndScope(
+                        _,
+                        "/// <summary>",
+                        "/// Gets a required named service implementation by contract and id.",
+                        "/// </summary>",
+                        "/// <typeparam name=\"T\"> The service contract whose implementation should be retrieved. </typeparam>",
+                        "/// <param name=\"serviceId\"> The service's unique identifier. </param>",
+                        "/// <returns> The contract's named service implementation or null if no such implementation exists. </returns>",
+                        "/// <exception cref=\"InvalidServiceException\"> Thrown if no service instance could be created. </exception>",
+                        "public T GetRequiredService<T>(string serviceId) where T : class")
+                        .BeginScope(
+                            "var scope = GetActiveScope();",
+                            "var service = scope.GetService<T>(serviceId);",
+                            "if (service == null)")
+                            .BeginScope(
+                                "throw new InvalidServiceException(typeof(T), serviceId);")
+                            .EndScope(
                             "return service;")
                         .EndScope()).ContinueWith(
                         _,
