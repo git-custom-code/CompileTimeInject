@@ -69,7 +69,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     if (!useNamedServices)
                     {
                         useNamedServices = context.Compilation
-                            .GetReferencedNetAssemblies()
+                            .GetReferencedIocVisibleAssemblies()
                             .Any(compilation => compilation.DefinesAnyNamedService());
                     }
                 }

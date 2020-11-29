@@ -36,6 +36,67 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         }
 
         /// <summary>
+        /// Co-routine that will return a <see cref="MetadataReader"/> for each referenced assembly,
+        /// that is annotated with an <see cref="IocVisibleAssemblyAttribute"/>.
+        /// </summary>
+        /// <param name="compilation"> The extended <see cref="Compilation"/>. </param>
+        /// <returns> A <see cref="MetadataReader"/> for each referenced ioc visible assembly. </returns>
+        public static IEnumerable<MetadataReader> GetReferencedIocVisibleAssemblies(this Compilation compilation)
+        {
+            var targetName = typeof(IocVisibleAssemblyAttribute).Name;
+            var targetNamespace = typeof(IocVisibleAssemblyAttribute).Namespace;
+            var targetAssemblyName = typeof(IocVisibleAssemblyAttribute).Assembly.GetName().Name;
+
+            foreach (var metadata in compilation.GetReferencedNetAssemblies())
+            {
+                foreach (var attributeHandle in metadata.CustomAttributes)
+                {
+                    var attribute = metadata.GetCustomAttribute(attributeHandle);
+                    // check only attributes that annotate an assembly at assembly level
+                    if (attribute.Parent.Kind == HandleKind.AssemblyDefinition &&
+                        attribute.Constructor.Kind == HandleKind.MemberReference)
+                    {
+                        var memberRef = metadata.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                        var typeRef = metadata.GetTypeReference((TypeReferenceHandle)memberRef.Parent);
+                        var assemblyRef = metadata.GetAssemblyReference((AssemblyReferenceHandle)typeRef.ResolutionScope);
+
+                        var assemblyName = metadata.GetString(assemblyRef.Name);
+                        var attributeName = metadata.GetString(typeRef.Name);
+                        var attributeNamespace = metadata.GetString(typeRef.Namespace);
+
+                        // check if the attribute is an IocVisibleAssemblyAttribtue ...
+                        if (string.Equals(targetName, attributeName, StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(targetNamespace, attributeNamespace, StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(targetAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return metadata;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="compilation"></param>
+        /// <returns></returns>
+        public static bool IsIocVisibleAssembly(this Compilation compilation)
+        {
+            var iocVisibleAssembly = typeof(IocVisibleAssemblyAttribute).FullName;
+            foreach (var attribute in compilation.Assembly.GetAttributes())
+            {
+                var name = attribute.AttributeClass?.ToString();
+                if (iocVisibleAssembly.Equals(name, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Given a collection o potential <paramref name="serviceCandidates"/>, find the concrete exported
         /// services in the extended <paramref name="compilation"/>.
         /// </summary>
@@ -45,8 +106,8 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator.Metadata
         /// </param>
         /// <returns> The found collection of exported services. </returns>
         public static IEnumerable<ServiceDescriptor> FindExportedServices(
-            this Compilation compilation,
-            IEnumerable<TypeDeclarationSyntax> serviceCandidates)
+        this Compilation compilation,
+        IEnumerable<TypeDeclarationSyntax> serviceCandidates)
         {
             var foundServices = new List<ServiceDescriptor>();
 

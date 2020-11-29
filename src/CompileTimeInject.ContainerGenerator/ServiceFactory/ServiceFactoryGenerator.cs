@@ -126,7 +126,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 }
 
                 // detect eported services in referenced assemblies
-                foreach (var compilation in context.Compilation.GetReferencedNetAssemblies())
+                foreach (var compilation in context.Compilation.GetReferencedIocVisibleAssemblies())
                 {
                     var services = compilation.FindExportedServices();
                     if (services.Any())

@@ -160,11 +160,15 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 var useNamedServices = false;
                 if (context.SyntaxReceiver is IocContainerSyntaxReceiver currrentCompilation)
                 {
-                    useScopedServices = currrentCompilation.UseLifetimeScoped;
-                    useNamedServices = currrentCompilation.UseNamedServices;
+                    if (context.Compilation.IsIocVisibleAssembly())
+                    {
+                        useScopedServices = currrentCompilation.UseLifetimeScoped;
+                        useNamedServices = currrentCompilation.UseNamedServices;
+                    }
+
                     if (!useScopedServices || !useNamedServices)
                     {
-                        foreach(var compilation in context.Compilation.GetReferencedNetAssemblies())
+                        foreach(var compilation in context.Compilation.GetReferencedIocVisibleAssemblies())
                         {
                             if (compilation.DefinesServiceWithLifetimeScoped())
                             {

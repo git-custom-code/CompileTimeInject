@@ -44,11 +44,15 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                 var useNamedServices = false;
                 if (context.SyntaxReceiver is INamedServiceFactorySyntaxReceiver currrentCompilation)
                 {
-                    useNamedServices = currrentCompilation.UseNamedServices;
+                    if (context.Compilation.IsIocVisibleAssembly())
+                    {
+                        useNamedServices = currrentCompilation.UseNamedServices;
+                    }
+
                     if (!useNamedServices)
                     {
                         useNamedServices = context.Compilation
-                            .GetReferencedNetAssemblies()
+                            .GetReferencedIocVisibleAssemblies()
                             .Any(compilation => compilation.DefinesAnyNamedService());
                     }
                 }

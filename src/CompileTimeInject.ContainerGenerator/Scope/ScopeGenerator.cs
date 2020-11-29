@@ -90,7 +90,7 @@ namespace CustomCode.CompileTimeInject.ContainerGenerator
                     useNamedServices = currrentCompilation.UseNamedServices;
                     if (!useScopedServices || !useNamedServices)
                     {
-                        foreach (var compilation in context.Compilation.GetReferencedNetAssemblies())
+                        foreach (var compilation in context.Compilation.GetReferencedIocVisibleAssemblies())
                         {
                             if (compilation.DefinesServiceWithLifetimeScoped())
                             {
